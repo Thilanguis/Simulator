@@ -35,14 +35,25 @@
           <span class="bonus-text">BÔNUS 1,3X</span>
           <span class="bonus-icon">⚡</span>
         </div>
-        <button id="abrirContrato" style="background: #8b0000; color: white" onclick="window.open('💎 Contrato de Submissão e Resgate de Saldo.pdf', '_blank')">📜</button>
-        <br />
-        <br />
-        <h2>Controle de Saldo</h2>
-        <p class="saldo-label">Saldo Dominadora:</p>
-        <p><span id="saldoDominadora">0,00</span></p>
-        <button id="resetSaldo">Resetar Saldo</button>
-        <button id="limparHistorico">Limpar Histórico</button>
+
+        <!-- cabeçalho com título + botão do contrato à direita -->
+        <div class="section-header">
+          <h2>Controle de Saldo</h2>
+          <button id="abrirContrato" class="icon-btn" title="Abrir contrato" onclick="window.open('💎 Contrato de Submissão e Resgate de Saldo.pdf','_blank')">📜</button>
+        </div>
+
+        <!-- saldo em linha com o rótulo -->
+        <div class="saldo-row">
+          <label class="saldo-label">Saldo:</label>
+          <span id="saldoDominadora" class="saldo-badge">0,00</span>
+        </div>
+
+        <!-- ações -->
+        <div class="btn-row">
+          <button id="resetSaldo">Resetar Saldo</button>
+          <button id="limparHistorico">Limpar Histórico</button>
+        </div>
+
         <div class="controle-saldo">
           <div class="bonus-especial-toggle">
             <label>
@@ -72,24 +83,32 @@
 
         <label>Tipo de operação:</label>
         <select id="tipoTransacao">
-          <option value="gasto">Compra de Serviço (Gasto)</option>
-          <option value="ganho">Ganho de Crédito</option>
+          <option value="gasto">Compra de Serviço 🔴</option>
+          <option value="ganho">Ganho de Crédito 🟢</option>
         </select>
 
         <div id="compraFields">
           <label>Tarefa (Compra):</label>
           <select id="selectTarefa">
-            <option value="">-- Escolher tarefa --</option>
-            <option value="2000|Café da manhã na cama|Servir na cama">Café da manhã na cama — R$ 2.000</option>
-            <option value="1000|Tirar cravos|Aturar tudo mesmo que doa">Tirar cravos — R$ 1.000</option>
-            <option value="4000|Cozinhar jantar completo|Dominado à disposição durante o jantar">Cozinhar jantar completo — R$ 4.000</option>
-            <option value="2000|Massagem|Relaxamento simples">Massagem — R$ 2.000</option>
-            <option value="4000|Acompanhar saída social|Assistência total">Acompanhar saída social — R$ 4.000</option>
-            <option value="3000|Vale escolher filme/atividade|Apenas escolha simples">Vale escolher filme/atividade — R$ 3.000</option>
-            <option value="4000|Vale sair sozinha com amiga|Liberdade social">Vale sair sozinha com amiga — R$ 4.000</option>
-            <option value="3000|Obrigação de servir (2 tarefas)|Intensifica sensação de controle">Obrigação de servir (2 tarefas) — R$ 3.000</option>
-            <option value="3500|Lavar os pés, esfoliar e massagem.|Ficar no chão">Lavar os pés, esfoliar e massagem. — R$ 3.500</option>
-            <option value="8000|Ela decide toda a agenda do dia|Dominado obedece tudo">Ela decide toda a agenda do dia — R$ 8.000</option>
+            <option value="0" data-placeholder="1">-- Escolher tarefa --</option>
+            <option value="4000|Café da manhã na cama|Servir na cama">Café da manhã na cama — R$ 4.000</option>
+            <option value="1500|Tirar cravos|Aturar tudo mesmo que doa">Tirar cravos — R$ 1.500</option>
+            <option value="6000|Cozinhar jantar|Dominado à disposição durante o jantar">Cozinhar jantar (cada amiga - R$ 500) — R$ 6.000</option>
+            <option value="5000|Massagem|Relaxamento profundo">Massagem — R$ 5.000</option>
+            <option value="3500|Massagem nos pés|Sem creme se tiver chulé">Massagem nos pés — R$ 3.500</option>
+            <option value="3000|Vale escolher filme/série|Proibido Ásia">Vale escolher filme/série 🚫🇰🇷 — R$ 3.000</option>
+            <option value="12250|Vale de escolha de FILME|Permitido Ásia">Vale escolher FILME ✔️🇰🇷 — R$ 12.250</option>
+            <option value="6500|Vale sair sozinha com amiga|Liberdade social">Vale sair sozinha com amiga — R$ 6.500</option>
+            <option value="6500|Obrigação de servir (2 tarefas)|Intensifica sensação de controle">Obrigação de servir (2 tarefas) — R$ 6.500</option>
+            <option value="4500|Lavar os pés e esfoliar.|Ficar no chão">Lavar os pés e esfoliar — R$ 4.500</option>
+            <option value="15000|Ela decide toda a agenda do dia|Dominado obedece tudo">Ela decide toda a agenda do dia — R$ 15.000</option>
+            <!-- Opções que reduzem o tempo dos bloqueios ativos -->
+            <optgroup label="👑 Redução de Limite 👑">
+              <option value="2000|REDUZIR_BLOQUEIO_6H|Reduz 6h de todos os limites" data-reduz-horas="6">Reduzir 6h 🔻 — R$ 2.000</option>
+              <option value="3500|REDUZIR_BLOQUEIO_12H|Reduz 12h de todos os limites" data-reduz-horas="12">Reduzir 12h 🔻 — R$ 3.500</option>
+              <option value="6000|REDUZIR_BLOQUEIO_1D|Reduz 1 dia de todos os limites" data-reduz-horas="24">Reduzir 1 dia 🔻 — R$ 6.000</option>
+              <option value="11000|REDUZIR_BLOQUEIO_3D|Reduz 3 dias de todos os limites" data-reduz-horas="72">Reduzir 3 dias 🔻 — R$ 11.000</option>
+            </optgroup>
           </select>
 
           <label>Descrição:</label>
@@ -112,8 +131,9 @@
             <option value="Cuspir porra (Sêmen) na boca">Cuspir porra (Sêmen) na boca R$ 1200,00</option>
             <option value="Chupar buceta">Chupar buceta R$ 200,00</option>
             <option value="Peidar na cara">Peidar na cara R$ 150,00</option>
-            <option value="Buraco">Buraco 💲</option>
             <option value="Match Masters">Match Masters</option>
+            <!-- <option value="Buraco">Conversar no grupo sobre sair ou planejar comida compartilhado na TV 💲</option> -->
+            <option value="Buraco">Buraco 💲</option>
             <option value="Videogames Competitivos">Videogames Competitivos 💲</option>
             <option value="Perfil">Perfil 💲</option>
             <option value="Jogos de tabuleiro com amigas">Jogos de tabuleiro com amigas 💲</option>
@@ -162,19 +182,19 @@
       </div>
 
       <div class="section">
+        <!-- ... -->
         <h2>Histórico de Transações</h2>
 
-        <label>Filtrar por data/hora (início):</label>
-        <input type="datetime-local" id="filterStart" />
-        <label>Filtrar por data/hora (fim):</label>
-        <input type="datetime-local" id="filterEnd" />
+        <label>Filtrar por dia:</label>
+        <input type="date" id="filterDate" />
         <div style="display: flex; gap: 10px; margin-top: 8px">
-          <button id="aplicarFiltro" style="background: #b8860b; color: #1e1e1e">Aplicar filtro</button>
-          <button id="limparFiltro" style="background: #444; color: #ccc">Limpar filtro</button>
+          <button id="aplicarFiltro" style="background: #b8860b; color: #1e1e1e">Filtrar</button>
+          <button id="limparFiltro" style="background: #444; color: #ccc">Limpar</button>
         </div>
 
         <div id="historico"></div>
         <button id="enviarHistoricoWhatsApp" style="background: #1e90ff; color: white; border-radius: 8px; border: none; margin-top: 10px">Enviar histórico por WhatsApp</button>
+        <!-- ... -->
       </div>
     </div>
 

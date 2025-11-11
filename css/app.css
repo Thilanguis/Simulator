@@ -184,6 +184,22 @@ button:hover {
   overflow-y: auto;
   border: 1px solid #444;
 }
+
+#historico {
+  overflow: auto;
+}
+#historico::-webkit-scrollbar {
+  width: 8px;
+}
+#historico::-webkit-scrollbar-thumb {
+  background: rgba(255, 215, 0, 0.35);
+  border-radius: 8px;
+}
+#historico::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+}
+
 #historico div {
   padding: 10px 0;
   border-bottom: 1px dashed #3a3a3a; /* Linhas mais sutis */
@@ -889,8 +905,8 @@ button:hover {
 }
 
 .bonus-especial-toggle input[type='checkbox']:checked {
-  border-color: rgba(76, 0, 76, 0.6);
-  box-shadow: 0 0 6px rgba(76, 0, 76, 0.6), 0 0 10px rgba(76, 0, 76, 0.6), 0 0 20pxrgba (76, 0, 76, 0.6);
+  border-color: rgba(255, 215, 0, 0.45);
+  box-shadow: 0 0 6px rgba(255, 215, 0, 0.45), 0 0 10px rgba(255, 215, 0, 0.45), 0 0 20pxrgba (76, 0, 76, 0.6);
 }
 
 /* Ícone centralizado e pulsante */
@@ -905,7 +921,7 @@ button:hover {
 }
 
 .bonus-especial-toggle input[type='checkbox']:checked::after {
-  content: '💰';
+  content: '✔️';
   opacity: 1;
   animation: pulsarCoracao 1.4s infinite alternate ease-in-out;
 }
@@ -1016,9 +1032,9 @@ button:hover {
   }
 }
 
-/* Opcional: checkbox com brilho e ícone 💰 */
+/* Opcional: checkbox com brilho e ícone ✔️ */
 .bonus-especial-toggle input[type='checkbox']::after {
-  content: '💰';
+  content: '✔️';
   display: none;
 }
 
@@ -1086,4 +1102,74 @@ h1 {
 #tarefasLimitadasLista button span {
   font-size: 18px;
   line-height: 1;
+}
+
+/* opções bloqueadas no select de tarefa */
+#selectTarefa option.locked {
+  color: #b78f00;
+  background: #1a1a1a;
+}
+#selectTarefa option:disabled {
+  color: #777 !important;
+}
+
+/* header do card: título à esquerda, ícone à direita */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+/* botão-ícone (contrato) */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(26, 26, 26, 0.9), rgba(12, 12, 12, 0.9));
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  color: #ffd700;
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.15), inset 0 0 6px rgba(0, 0, 0, 0.6);
+  transition: transform 0.18s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.icon-btn:hover {
+  border-color: rgba(255, 215, 0, 0.55);
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.35);
+  transform: translateY(-1px);
+}
+.icon-btn:active {
+  transform: scale(0.96);
+}
+
+/* saldo em linha com o rótulo */
+.saldo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 14px;
+}
+.saldo-label {
+  color: #d6c27a;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* se quiser garantir que a “plaquinha” do saldo fique bem encaixada em linha */
+.saldo-badge {
+  display: inline-block;
+}
+
+/* botões lado a lado */
+.btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 6px 0 10px;
 }
