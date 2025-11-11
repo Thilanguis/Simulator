@@ -99,29 +99,6 @@
   box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.7), 0 0 4px rgba(255, 0, 0, 0.9);
 }
 
-/* ===================== */
-/* MOBILE - UNIFICADO DESKTOP */
-/* ===================== */
-@media (max-width: 480px) {
-  /* NÃO alteramos nada: mantém exatamente igual ao desktop */
-  .bonus-spark,
-  .fire-particle,
-  .fire-particle.fire-trail,
-  .fire-particle.shell-trail,
-  .fire-particle.cascade-trail,
-  .fire-particle.spider-trail,
-  .fire-particle.ring-particle,
-  .fire-smoke-puff,
-  .fire-smoke-puff.small,
-  .fire-smoke-trail {
-    width: auto;
-    height: auto;
-    box-shadow: inherit;
-    filter: inherit;
-    animation: inherit;
-  }
-}
-
 /* ============================================== */
 /* 🌟 OUTDOOR/PLACA DE BÔNUS ATIVO (DENTRO DO CONTAINER) - VERSÃO MELHORADA 🌟 */
 /* ============================================== */

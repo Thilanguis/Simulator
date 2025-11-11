@@ -105,67 +105,6 @@
   box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.7), 0 0 4px rgba(255, 0, 0, 0.9);
 }
 
-/* Mobile tweaks */
-@media (max-width: 480px) {
-  .bonus-spark {
-    width: 4px;
-    height: 4px;
-  }
-  .fire-particle {
-    width: 3px; /* mobile: menor (antes 2.5) — mantém proporcional */
-    height: 3px;
-    box-shadow: 0 0 6px rgba(255, 0, 150, 0.9);
-    filter: brightness(1.25);
-  }
-  @keyframes particleFlash {
-    0% {
-      filter: brightness(2);
-      transform: scale(1.15);
-      opacity: 1;
-    }
-    12% {
-      filter: brightness(1.6);
-      transform: scale(1.08);
-    }
-    30% {
-      filter: brightness(1.35);
-      transform: scale(1);
-    }
-    100% {
-      filter: brightness(1);
-      transform: scale(1);
-      opacity: 0.01;
-    }
-  }
-
-  /* aplica o flash muito curto — sem alterar demais a animação original */
-  .fire-particle {
-    animation: particleFlash 360ms ease-out 0s 1;
-  }
-  .fire-particle.fire-trail {
-    width: 3px;
-    height: 3px;
-  }
-  .fire-particle.shell-trail {
-    width: 2.5px;
-    height: 7px;
-  }
-  .fire-particle.cascade-trail {
-    width: 2px;
-    height: 2px;
-  }
-  .fire-particle.spider-trail {
-    width: 2.5px;
-    height: 2.5px;
-  }
-  .fire-particle.ring-particle {
-    width: 3px;
-    height: 3px;
-    transition: transform 2800ms cubic-bezier(0.1, 0.8, 0.2, 1), opacity 2800ms ease-out;
-    box-shadow: 0 0 8px 1px rgba(255, 255, 255, 0.7), 0 0 4px rgba(255, 0, 0, 0.9);
-  }
-}
-
 /* ============================================== */
 /* 🌟 OUTDOOR/PLACA DE BÔNUS ATIVO (DENTRO DO CONTAINER) - VERSÃO MELHORADA 🌟 */
 /* ============================================== */
@@ -291,19 +230,6 @@ body:has(#bonusEspecialCheckbox:checked) #bonusActiveBanner {
   border-radius: 50%;
   filter: blur(1.2px);
   will-change: transform, opacity;
-}
-
-/* mobile finesse */
-@media (max-width: 480px) {
-  .fire-smoke-puff {
-    filter: blur(1.3px);
-  }
-  .fire-smoke-puff.small,
-  .fire-smoke-trail {
-    filter: blur(1px);
-    width: 5px;
-    height: 5px;
-  }
 }
 
 /* fallback: se por algum motivo classes antigas '.smoke' ainda existirem */
