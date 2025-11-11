@@ -1,28 +1,30 @@
 // efeitoBonusAtivo.js
-// Versão otimizada:
-// - Mantém todos os efeitos originais (fogos, ring, cascata, spider, fumaça)
-// - Android em tela cheia com mais fumaça porém fluido
-// - Evita explosões pesadas em todo movimento/toque (apenas brilhos)
-// - Usa container fixo para não ser cortado pelo layout/PWA
+// Meta: Visual idêntico no PC e no Android (PWA tela cheia)
+// - Mantém todos os fogos (shell, willow, cascata, spider, ring)
+// - Mantém fumaça bonita e presente
+// - Remove fogos pesados disparando por mouse/touch (só brilhos leves)
+// - Usa caps altos apenas como proteção contra travamento extremo
 
 (function () {
   const ua = navigator.userAgent || '';
   const isAndroid = /Android/i.test(ua) || (navigator.userAgentData && /Android/i.test(navigator.userAgentData.platform || ''));
   const MOBILE = /Mobi|Android/i.test(ua);
 
-  // Ajustes globais
-  const TIME_SCALE = isAndroid ? 1.3 : 1.0; // Android anima um pouco mais lento p/ acompanhar
-  const SMOKE_MULT = isAndroid ? 1.7 : 1.0; // Mais fumaça no Android (realismo)
-  const FIRE_INTERVAL_MS = isAndroid
-    ? 2200 // Menos rajada automática no Android (menos lag)
-    : MOBILE
-    ? 1200
-    : 700;
-  const SPARK_THROTTLE_MS = MOBILE ? 140 : 80; // Menos spam de brilhos em touch
+  // Sem acelerar nem desacelerar nada: igual para todas as plataformas
+  const TIME_SCALE = 1.0;
 
-  // Limites para não travar
-  const MAX_PARTICLES = isAndroid ? 160 : 320; // Limite de partículas de fogo
-  const MAX_SMOKE = isAndroid ? 260 : 520; // Limite de fumaça ativa
+  // Leve bônus de fumaça (quase imperceptível em performance, bom pro visual)
+  const SMOKE_MULT = 1.2;
+
+  // Mesmo comportamento base que você já usava:
+  const FIRE_INTERVAL_MS = MOBILE ? 1200 : 700;
+
+  // Brilhos: evita spam absurdo, mas continua responsivo
+  const SPARK_THROTTLE_MS = MOBILE ? 120 : 80;
+
+  // Caps de segurança: altos o suficiente para não cortar o efeito em uso normal
+  const MAX_PARTICLES = 420; // fogos/partículas
+  const MAX_SMOKE = 900; // fumaça/trails
 
   const bonusCheckbox = document.getElementById('bonusEspecialCheckbox');
   if (!bonusCheckbox) return;
@@ -36,7 +38,7 @@
   const smokeTrailMap = new WeakMap();
   const smokeTrailIntervals = new Set();
 
-  // Container fixo para fogos (evita clipping e respeita tela cheia no PWA)
+  // Container fixo global: impede clipping em PWA/fullscreen
   let fireContainer = document.getElementById('fire-container');
   if (!fireContainer) {
     fireContainer = document.createElement('div');
@@ -54,16 +56,16 @@
     document.body.appendChild(fireContainer);
   }
 
-  // Utils
+  // ---------- Utils ----------
   function rand(min, max) {
     return min + Math.random() * (max - min);
   }
 
   function getThemeHue() {
     const p = Math.random();
-    if (p < 0.33) return rand(280, 330); // roxos/rosas
-    if (p < 0.66) return rand(0, 40); // vermelhos/laranjas
-    return rand(40, 65); // dourados
+    if (p < 0.33) return rand(280, 330); // roxo/rosa
+    if (p < 0.66) return rand(0, 40); // vermelho/laranja
+    return rand(40, 65); // dourado
   }
 
   function trackParticle(el) {
@@ -90,11 +92,11 @@
     const sat = Math.round(rand(70, 90));
     const light = Math.round(rand(60, 80));
 
-    // Android tem bug com hsl + filter; usamos box-shadow colorido lá.
+    // Fix sutil pro Android (bug de hsl + filter em alguns WebViews)
     if (isAndroid) {
       const color = `hsl(${hue}, ${sat}%, ${light}%)`;
       p.style.background = 'transparent';
-      p.style.boxShadow = `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.4)`;
+      p.style.boxShadow = `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.35)`;
       p.style.filter = 'none';
     } else {
       p.style.background = `hsl(${hue} ${sat}% ${light}%)`;
@@ -117,7 +119,7 @@
     return p;
   }
 
-  // ---------- Fumaça estática (explosão) ----------
+  // ---------- Fumaça explosão ----------
   function spawnFireSmoke(x, y, lifeMs = 900) {
     lifeMs = Math.round(lifeMs * TIME_SCALE);
     const baseCount = 4;
@@ -136,7 +138,7 @@
       smoke.style.borderRadius = '50%';
       smoke.style.background = 'radial-gradient(circle, rgba(200,200,200,0.30) 0%, rgba(200,200,200,0) 70%)';
       smoke.style.pointerEvents = 'none';
-      smoke.style.opacity = isAndroid ? '0.26' : '0.42';
+      smoke.style.opacity = '0.40';
       smoke.style.transform = 'scale(1)';
       smoke.style.zIndex = '99999';
 
@@ -151,8 +153,9 @@
         const t = now - start;
         const p = Math.min(1, t / lifeMs);
         const fade = 1 - p;
+
         smoke.style.transform = `translate(${vx * (t / 16)}px, ${vy * (t / 16)}px) scale(${1 + p * 0.55})`;
-        smoke.style.opacity = String((isAndroid ? 0.26 : 0.42) * fade);
+        smoke.style.opacity = String(0.4 * fade);
 
         if (p >= 1 || !fireContainer.contains(smoke)) {
           smoke.remove();
@@ -164,7 +167,7 @@
     }
   }
 
-  // ---------- Fumaça trail (rastro dos fogos) ----------
+  // ---------- Fumaça trail ----------
   function spawnTrailSmoke(x, y, life = 260) {
     if (activeSmoke.size >= MAX_SMOKE) return;
 
@@ -173,30 +176,33 @@
     const puff = document.createElement('div');
     puff.className = 'fire-smoke-trail';
     puff.style.position = 'fixed';
+
     const size = 3 + Math.random() * 5;
     puff.style.width = size + 'px';
     puff.style.height = size + 'px';
     puff.style.left = x - size / 2 + 'px';
     puff.style.top = y - size / 2 + 'px';
+
     puff.style.borderRadius = '50%';
     puff.style.pointerEvents = 'none';
     puff.style.zIndex = '99999';
 
     const gray = Math.round(185 + Math.random() * 20);
     puff.style.background = `radial-gradient(circle, rgba(${gray},${gray},${gray},0.22) 0%, rgba(${gray},${gray},${gray},0) 65%)`;
-    if (!isAndroid) puff.style.willChange = 'transform, opacity';
+    puff.style.willChange = 'transform, opacity';
 
     fireContainer.appendChild(puff);
     trackSmoke(puff);
 
     const vx = (Math.random() - 0.5) * 0.3;
     const vy = -(0.3 + Math.random() * 0.35);
-    const startOpacity = 0.36 + Math.random() * 0.12;
+    const startOpacity = 0.34 + Math.random() * 0.14;
     const start = performance.now();
 
     (function frame(now) {
       const t = now - start;
       const p = Math.min(1, t / life);
+
       puff.style.transform = `translate(${vx * (t / 16)}px, ${vy * (t / 16)}px) scale(${1 + p * 0.35})`;
       puff.style.opacity = String(startOpacity * (1 - p * 2.1));
 
@@ -212,9 +218,9 @@
   function attachSmokeTrailToParticle(particleEl) {
     if (!particleEl || smokeTrailMap.has(particleEl)) return;
 
-    const baseLife = particleEl._lifespan || 700 * TIME_SCALE;
-    const puffLife = Math.max(80, Math.round(baseLife * (isAndroid ? 0.22 : 0.3)));
-    const freq = Math.max(isAndroid ? 110 : 60, Math.round(Math.min(220, baseLife * 0.09)));
+    const baseLife = particleEl._lifespan || 700;
+    const puffLife = Math.max(80, Math.round(baseLife * 0.28));
+    const freq = Math.max(70, Math.round(Math.min(220, baseLife * 0.09)));
 
     const iv = setInterval(() => {
       if (!fireContainer.contains(particleEl)) {
@@ -235,12 +241,12 @@
     smokeTrailIntervals.add(iv);
   }
 
-  // ---------- TIPOS DE FOGOS (mantidos) ----------
+  // ---------- TIPOS DE FOGOS (mesma lógica visual) ----------
 
   function spawnShell(x, y) {
     const hueBase = getThemeHue();
     const targetY = y - rand(150, 250);
-    const trailDuration = 420 * TIME_SCALE;
+    const trailDuration = 400;
 
     const shell = createParticle(x, y, hueBase, trailDuration + 40);
     if (!shell) return;
@@ -265,45 +271,45 @@
   }
 
   function spawnSmallBurst(x, y, hueBase) {
-    const count = Math.floor(rand(10, 18));
-    const duration = 1500 * TIME_SCALE;
+    const count = Math.floor(rand(12, 20));
+    const duration = 1500;
 
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration + rand(0, 120));
       if (!p) return;
 
       const angle = rand(0, Math.PI * 2);
-      const dist = rand(MOBILE ? 24 : 40, MOBILE ? 46 : 90);
+      const dist = rand(40, 90);
       const tx = Math.cos(angle) * dist;
       const ty = Math.sin(angle) * dist * -1;
       const delay = rand(0, 40);
 
       setTimeout(() => {
         if (!fireContainer.contains(p)) return;
-        p.style.transform = `translate(${tx}px, ${ty}px) scale(${rand(0.7, 1.25)})`;
+        p.style.transform = `translate(${tx}px, ${ty}px) scale(${rand(0.7, 1.3)})`;
         p.style.opacity = '0';
-        spawnFireSmoke(x + rand(-10, 10), y + rand(-10, 10), 720);
+        spawnFireSmoke(x + rand(-10, 10), y + rand(-10, 10), 700);
       }, delay);
 
       setTimeout(() => {
         if (fireContainer.contains(p)) p.remove();
         untrackParticle(p);
-      }, duration + 180);
+      }, duration + rand(0, 150));
     }
   }
 
   function spawnWillowBurst(x, y, hueBase) {
-    const count = Math.floor(rand(8, 11));
-    const duration = 3000 * TIME_SCALE;
+    const count = Math.floor(rand(8, 12));
+    const duration = 3000;
 
     for (let i = 0; i < count; i++) {
-      const p = createParticle(x, y, hueBase, duration + rand(0, 220));
+      const p = createParticle(x, y, hueBase, duration + rand(0, 200));
       if (!p) return;
 
       p.classList.add('fire-trail');
 
       const angle = rand(0, Math.PI * 2);
-      const dist = rand(MOBILE ? 22 : 36, MOBILE ? 40 : 72);
+      const dist = rand(36, 72);
       const tx = Math.cos(angle) * dist * 1.4;
       const ty = Math.sin(angle) * dist * -0.8 + rand(18, 36);
       const delay = rand(0, 90);
@@ -321,14 +327,14 @@
       setTimeout(() => {
         if (fireContainer.contains(p)) p.remove();
         untrackParticle(p);
-      }, duration + 260);
+      }, duration + rand(120, 260));
     }
   }
 
   function spawnGoldCascade(x, y) {
     const hueBase = 50;
-    const count = Math.floor(rand(10, 16));
-    const duration = 2800 * TIME_SCALE;
+    const count = Math.floor(rand(10, 18));
+    const duration = 3000;
 
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration + rand(0, 200));
@@ -340,14 +346,14 @@
       const dist = rand(30, 70);
       const tx = Math.cos(angle) * dist * 0.8;
       const ty = Math.sin(angle) * dist + rand(30, 80);
-      const delay = rand(0, 140);
+      const delay = rand(0, 160);
 
       setTimeout(() => {
         if (!fireContainer.contains(p)) return;
         p.style.transform = `translate(${tx}px, ${ty}px) scale(0.6)`;
         p.style.opacity = '0.05';
         p.style.transitionDuration = `${duration}ms`;
-        spawnFireSmoke(x + rand(-10, 10), y + rand(-10, 10), 600);
+        spawnFireSmoke(x + rand(-10, 10), y + rand(-10, 10), 580);
       }, delay);
 
       attachSmokeTrailToParticle(p);
@@ -355,23 +361,23 @@
       setTimeout(() => {
         if (fireContainer.contains(p)) p.remove();
         untrackParticle(p);
-      }, duration + 260);
+      }, duration + rand(120, 320));
     }
   }
 
   function spawnSpiderBurst(x, y) {
     const hueBase = getThemeHue();
-    const count = Math.floor(rand(7, 10));
-    const duration = 2900 * TIME_SCALE;
+    const count = Math.floor(rand(8, 12));
+    const duration = 3000;
 
     for (let i = 0; i < count; i++) {
-      const p = createParticle(x, y, hueBase, duration + rand(0, 260));
+      const p = createParticle(x, y, hueBase, duration + rand(0, 240));
       if (!p) return;
 
       p.classList.add('spider-trail');
 
       const angle = rand(0, Math.PI * 2);
-      const dist = rand(MOBILE ? 80 : 150, MOBILE ? 120 : 240);
+      const dist = rand(120, 240);
       const tx = Math.cos(angle) * dist;
       const ty = Math.sin(angle) * dist * -1;
       const delay = rand(0, 150);
@@ -389,14 +395,14 @@
       setTimeout(() => {
         if (fireContainer.contains(p)) p.remove();
         untrackParticle(p);
-      }, duration + 360);
+      }, duration + rand(180, 420));
     }
   }
 
   function spawnRingBurst(x, y) {
     const hueBase = getThemeHue();
-    const count = Math.floor(rand(20, 30));
-    const duration = 3800 * TIME_SCALE;
+    const count = Math.floor(rand(20, 32));
+    const duration = 4000;
     const ringRadius = MOBILE ? 60 : 100;
 
     for (let i = 0; i < count; i++) {
@@ -404,7 +410,7 @@
       if (!p) return;
 
       p.classList.add('ring-particle');
-      p.style.transition = `transform ${duration}ms cubic-bezier(0.1, 0.8, 0.2, 1), opacity ${duration}ms ease-out`;
+      p.style.transition = `transform ${duration}ms cubic-bezier(0.1, 0.8, 0.2, 1), ` + `opacity ${duration}ms ease-out`;
 
       const angle = (i / count) * Math.PI * 2;
       const dist = ringRadius + rand(-5, 5);
@@ -416,13 +422,13 @@
         if (!fireContainer.contains(p)) return;
         p.style.transform = `translate(${tx}px, ${ty}px) scale(${rand(0.7, 1.1)})`;
         p.style.opacity = '0';
-        spawnFireSmoke(x + rand(-10, 10), y + rand(-10, 10), duration * 0.6);
+        spawnFireSmoke(x + rand(-10, 10), y + rand(-10, 10), duration * 0.65);
       }, delay);
 
       setTimeout(() => {
         if (fireContainer.contains(p)) p.remove();
         untrackParticle(p);
-      }, duration + 260);
+      }, duration + delay + 200);
     }
   }
 
@@ -436,7 +442,7 @@
     else spawnRingBurst(x, y);
   }
 
-  // ---------- SPARKS (apenas brilhos, sem fogos pesados no input) ----------
+  // ---------- SPARKS (apenas brilhos, sem fogos grandes no input) ----------
 
   let lastSparkTime = 0;
 
@@ -467,7 +473,7 @@
   function onMouseSpark(e) {
     if (!bonusCheckbox.checked) return;
     spawnSpark(e.clientX, e.clientY);
-    // Sem spawnFirework aqui -> evita explosão pesada em todo movimento
+    // NÃO chama spawnFirework aqui => não sobrecarrega
   }
 
   function onTouchSpark(e) {
@@ -475,7 +481,7 @@
     for (const t of e.touches) {
       spawnSpark(t.clientX, t.clientY);
     }
-    // Sem spawnFirework aqui também
+    // Também sem spawnFirework no toque
   }
 
   // ---------- CONTROLE PRINCIPAL ----------
