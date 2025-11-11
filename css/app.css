@@ -1042,3 +1042,34 @@ h1 {
   flex-shrink: 0;
   white-space: nowrap;
 }
+
+#tarefasLimitadasSection {
+  margin-top: 30px;
+  background: #151515;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+#tarefasLimitadasLista div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+  color: #ffd700;
+}
+
+#tarefasLimitadasLista button {
+  background: #8b0000;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+#tarefasLimitadasLista button:hover {
+  background: #b30000;
+}

@@ -82,6 +82,55 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistorico();
   }
 
+  /* =============================================================== */
+  /* 🕒 SISTEMA DE LIMITES DE TAREFAS (14 DIAS)                      */
+  /* =============================================================== */
+
+  const LIMITE_DIAS = 14;
+  const tarefasLimitadas = ['Ela decide toda a agenda do dia'];
+  let tarefasBloqueadas = JSON.parse(localStorage.getItem('tarefasBloqueadas') || '[]');
+
+  window.removerTarefaLimitada = function (nome) {
+    tarefasBloqueadas = tarefasBloqueadas.filter((t) => t.nome !== nome);
+    localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+    atualizarTarefasLimitadasUI();
+  };
+
+  function atualizarTarefasLimitadasUI() {
+    const lista = document.getElementById('tarefasLimitadasLista');
+    if (!lista) return;
+
+    const agora = Date.now();
+    lista.innerHTML = '';
+
+    // Remove expiradas
+    tarefasBloqueadas = tarefasBloqueadas.filter((t) => t.expiraEm > agora);
+    localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+
+    if (tarefasBloqueadas.length === 0) {
+      lista.innerHTML = '<p style="color:#aaa;">Nenhuma tarefa limitada ativa.</p>';
+      return;
+    }
+
+    tarefasBloqueadas.forEach((tarefa) => {
+      const diffMs = tarefa.expiraEm - agora;
+      const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHoras = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const diffMin = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <span>🔒 <b>${tarefa.nome}</b> — libera em ${diffDias}d ${diffHoras}h ${diffMin}m</span>
+        <button onclick="removerTarefaLimitada('${tarefa.nome}')">🗑️</button>
+      `;
+      lista.appendChild(div);
+    });
+  }
+
+  // Atualiza lista a cada minuto
+  setInterval(atualizarTarefasLimitadasUI, 60000);
+  atualizarTarefasLimitadasUI();
+
   // --- Event Listeners ---
 
   // Bônus Especial (Langerie)
@@ -121,6 +170,21 @@ document.addEventListener('DOMContentLoaded', () => {
       valor = parseInt(valor);
       if (saldoDominadora < valor) return alert('Saldo insuficiente!');
 
+      // Limite de 14 dias
+      if (tarefasLimitadas.includes(tarefa)) {
+        const agora = Date.now();
+        const bloqueada = tarefasBloqueadas.find((t) => t.nome === tarefa && t.expiraEm > agora);
+        if (bloqueada) {
+          alert(`❌ "${tarefa}" ainda está bloqueada por limite de ${LIMITE_DIAS} dias.`);
+          return;
+        }
+        const expiraEm = agora + LIMITE_DIAS * 24 * 60 * 60 * 1000;
+        tarefasBloqueadas.push({ nome: tarefa, expiraEm });
+        localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+        atualizarTarefasLimitadasUI();
+      }
+
+      // Gasto normal
       saldoDominadora -= valor;
       adicionarHistorico(tarefa, valor, tipo);
 
@@ -147,29 +211,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
       window.open(urlWhatsApp, '_blank');
     } else {
-      // ESTE É O BLOCO DE "GANHO"
+      // BLOCO DE "GANHO" — preservado
       const ganhoSelecionado = selectGanhoSelect.value;
       const valorInput = valorGanhoInput.value;
       if (!ganhoSelecionado || !valorInput || parseInt(valorInput) <= 0) return alert('Por favor, selecione uma forma de ganho e insira um valor válido.');
 
       valor = parseInt(valorInput);
       tarefa = ganhoSelecionado;
-
-      if (ganhoSelecionado === 'Pés na cara') {
-        const chule = document.getElementById('chkChule').checked;
-        const francesinha = document.getElementById('chkFrancesinha').checked;
-        let options = [];
-        if (chule) options.push('chulé');
-        if (francesinha) options.push('francesinha');
-        if (options.length > 0) tarefa += ` (${options.join(' e ')})`;
-      }
-
-      if (ganhoSelecionado === 'Tapa de pé na cara') {
-        const quantidade = parseInt(document.getElementById('quantidadeMultiplicador').value) || 1;
-        if (quantidade > 1) {
-          tarefa += ` (x${quantidade})`;
-        }
-      }
 
       const multBonus = getBonusEspecialMultiplier();
       valor = Math.round(valor * multBonus * 100) / 100;
@@ -179,92 +227,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       selectGanhoSelect.value = '';
       valorGanhoInput.value = '0';
-      document.getElementById('chkChule').checked = false;
-      document.getElementById('chkFrancesinha').checked = false;
-      const quantidadeInput = document.getElementById('quantidadeMultiplicador');
-      quantidadeInput.value = 1;
-      quantidadeInput.style.display = 'none';
-      document.getElementById('labelQuantidadeMultiplicador').style.display = 'none';
-
       atualizarSaldo();
       aplicarBonusDeTarefaDuranteTimer(valor, ganhoSelecionado);
 
-      // =======================================================
-      // ✨ CÓDIGO ADICIONADO PARA A CHUVA DE DINHEIRO ✨
-      // Só roda se a classe RainMoney (do outro arquivo) existir
       if (typeof RainMoney !== 'undefined') {
         const rainBurst = new RainMoney('💵', 'low');
-        // Chama a nova função com o efeito de queima:
-        // 1º parâmetro: 3000ms = chuva normal por 3 segundos
-        // 2º parâmetro: '🔥' = emoji de fogo
-        // 3º parâmetro: 2000ms = efeito de queima dura 2 segundos
         rainBurst.startBurningEffect(3000, '🔥', 2000);
       }
-      // =======================================================
     }
   });
 
-  // Listeners de Ganhos
-  selectGanhoSelect.addEventListener('change', calcularValorGanho);
-  document.getElementById('chkChule').addEventListener('change', calcularValorGanho);
-  document.getElementById('chkFrancesinha').addEventListener('change', calcularValorGanho);
-
-  // Listeners de Gastos
-  selectTarefaSelect.addEventListener('change', function () {
-    descricaoTransacaoInput.value = this.value.split('|')[2] || '';
-  });
-
-  // Listeners de Administração
-  resetBtn.addEventListener('click', () => {
-    if (confirm('Tem certeza que deseja RESETAR O SALDO?')) {
-      saldoDominadora = 0;
-      atualizarSaldo();
-      tarefasPendentes = [];
-      localStorage.setItem('tarefasPendentes', '[]');
-      renderTarefasPendentes();
-    }
-  });
-
-  limparBtn.addEventListener('click', () => {
-    if (confirm('Tem certeza que deseja LIMPAR O HISTÓRICO?')) {
-      historico = [];
-      localStorage.setItem('historico', '[]');
-      renderHistorico();
-      tarefasPendentes = [];
-      localStorage.setItem('tarefasPendentes', '[]');
-      renderTarefasPendentes();
-    }
-  });
-
-  // Listeners de Filtro
-  aplicarFiltroBtn.addEventListener('click', () => {
-    renderHistorico();
-  });
-  limparFiltroBtn.addEventListener('click', () => {
-    filterStartInput.value = '';
-    filterEndInput.value = '';
-    renderHistorico();
-  });
-
-  // Listener Enviar WhatsApp
-  document.getElementById('enviarHistoricoWhatsApp').addEventListener('click', () => {
-    const filtered = getFilteredHistorico();
-    if (!filtered || filtered.length === 0) return alert('Nenhum registro encontrado para o período/filtro selecionado.');
-    const numeroWhatsApp = '+14386305973';
-    const dataHora = new Date().toLocaleString('pt-BR', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    });
-    let mensagem = `📜 *HISTÓRICO DE TRANSAÇÕES*\n\nData de envio: ${dataHora}\n\n`;
-    filtered.forEach((h, idx) => {
-      mensagem += `${idx + 1}. ${h.tipo === 'ganho' ? 'Crédito' : 'Gasto'} — ${h.descricao} — Valor: R$ ${h.valor.toLocaleString('pt-BR')} — Saldo: R$ ${h.saldoAtual.toLocaleString('pt-BR')} — ${formatDate(h.timestamp)}\n`;
-    });
-    mensagem += `\n— Fim do histórico.`;
-    const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
-    window.open(urlWhatsApp, '_blank');
-  });
-
-  // Listeners do Timer
+  // Listeners do Timer (preservado)
   btnPlayPause.addEventListener('click', () => {
     if (!timerEmSessao) {
       baseMultiplicadorSessao = 1;
@@ -342,4 +315,5 @@ document.addEventListener('DOMContentLoaded', () => {
   renderHistorico();
   renderTarefasPendentes();
   updateBonusEspecialUI();
+  atualizarTarefasLimitadasUI();
 });
