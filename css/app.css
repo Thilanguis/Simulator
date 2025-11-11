@@ -1037,3 +1037,8 @@ button:hover {
     opacity: 1;
   }
 }
+
+h1 {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
