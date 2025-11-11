@@ -1,5 +1,5 @@
-// efeitoBonusAtivo_corrigido.js
-// Corrigido para Android: mantém o visual idêntico ao PC (fumaça, tempo e densidade sincronizados)
+// efeitoBonusAtivo.js
+// Corrigido para Android: mantém o visual idêntico ao PC (fumaça, tempo e densidade sincronizados + visibilidade garantida)
 
 (function () {
   // ---------- DETECÇÃO E AJUSTES ANDROID ----------
@@ -8,7 +8,6 @@
   const TIME_SCALE = isAndroid ? 1.5 : 1.0; // ANDROID FIX: compensa aceleração do Android
   const SMOKE_MULT = isAndroid ? 2 : 1; // ANDROID FIX: reforça a fumaça
 
-  // Intervalo ajustado
   const MOBILE = /Mobi|Android/i.test(navigator.userAgent);
   const FIRE_INTERVAL_MS = MOBILE ? Math.round(1200 * TIME_SCALE) : 700;
   const SPARK_THROTTLE_MS = 100;
@@ -21,6 +20,24 @@
   const activeSparks = new Set();
   const activeParticles = new Set();
   const smokeTrailMap = new WeakMap();
+
+  // ---------- CONTAINER GLOBAL PARA FOGOS (evita clipping Android) ----------
+  let fireContainer = document.getElementById('fire-container');
+  if (!fireContainer) {
+    fireContainer = document.createElement('div');
+    fireContainer.id = 'fire-container';
+    Object.assign(fireContainer.style, {
+      position: 'fixed',
+      left: '0',
+      top: '0',
+      width: '100vw',
+      height: '100vh',
+      overflow: 'visible',
+      zIndex: '99999',
+      pointerEvents: 'none',
+    });
+    document.body.appendChild(fireContainer);
+  }
 
   // ---------- FUNÇÕES BASE ----------
   function rand(min, max) {
@@ -42,19 +59,21 @@
     p.style.background = `hsl(${hue} ${sat}% ${light}%)`;
     p.style.left = x + 'px';
     p.style.top = y + 'px';
-    p.style.position = 'absolute';
-    if (typeof lifespanMs === 'number') p._lifespan = Math.max(60, Math.round(lifespanMs * TIME_SCALE)); // ANDROID FIX
-    document.body.appendChild(p);
+    p.style.position = 'fixed';
+    p.style.zIndex = '99999';
+    p.style.pointerEvents = 'none';
+    if (typeof lifespanMs === 'number') p._lifespan = Math.max(60, Math.round(lifespanMs * TIME_SCALE));
+    fireContainer.appendChild(p);
     return p;
   }
 
   // ---------- FUMAÇA ----------
   function spawnFireSmoke(x, y, lifeMs = 900) {
-    lifeMs *= TIME_SCALE; // ANDROID FIX
+    lifeMs *= TIME_SCALE;
     for (let i = 0; i < SMOKE_MULT; i++) {
       const smoke = document.createElement('div');
       smoke.className = 'fire-smoke';
-      smoke.style.position = 'absolute';
+      smoke.style.position = 'fixed';
       smoke.style.left = x + 'px';
       smoke.style.top = y + 'px';
       smoke.style.width = '10px';
@@ -65,8 +84,8 @@
       smoke.style.userSelect = 'none';
       smoke.style.opacity = '0.45';
       smoke.style.transform = 'scale(1)';
-      smoke.style.zIndex = 1280;
-      document.body.appendChild(smoke);
+      smoke.style.zIndex = '99999';
+      fireContainer.appendChild(smoke);
 
       const vx = (Math.random() - 0.5) * 0.8;
       const vy = -(Math.random() * 0.6 + 0.4);
@@ -88,7 +107,7 @@
   }
 
   function spawnTrailSmoke(x, y, life = 250) {
-    life *= TIME_SCALE; // ANDROID FIX
+    life *= TIME_SCALE;
     for (let i = 0; i < SMOKE_MULT; i++) {
       const puff = document.createElement('div');
       puff.className = 'fire-smoke-trail';
@@ -100,11 +119,11 @@
       puff.style.top = y - size / 2 + 'px';
       puff.style.borderRadius = '50%';
       puff.style.pointerEvents = 'none';
-      puff.style.zIndex = 1300;
+      puff.style.zIndex = '99999';
       const gray = Math.round(185 + Math.random() * 20);
       puff.style.background = `radial-gradient(circle, rgba(${gray},${gray},${gray},${0.22 + Math.random() * 0.12}) 0%, rgba(${gray},${gray},${gray},0) 65%)`;
       puff.style.willChange = 'transform, opacity';
-      document.body.appendChild(puff);
+      fireContainer.appendChild(puff);
 
       const vx = (Math.random() - 0.5) * 0.35;
       const vy = -(0.35 + Math.random() * 0.45);
@@ -128,8 +147,8 @@
   function attachSmokeTrailToParticle(particleEl) {
     if (!particleEl || smokeTrailMap.has(particleEl)) return;
     const baseLife = particleEl._lifespan ? Number(particleEl._lifespan) : 700 * TIME_SCALE;
-    let puffLife = Math.max(60, Math.round(baseLife * 0.3));
-    let freq = Math.max(45, Math.round(Math.min(220, baseLife * 0.08)));
+    const puffLife = Math.max(60, Math.round(baseLife * 0.3));
+    const freq = Math.max(45, Math.round(Math.min(220, baseLife * 0.08)));
 
     const iv = setInterval(() => {
       if (!document.body.contains(particleEl)) {
@@ -149,8 +168,7 @@
   function spawnShell(x, y) {
     const hueBase = getThemeHue();
     const targetY = y - rand(150, 250);
-    const trailDuration = 400 * TIME_SCALE; // ANDROID FIX
-
+    const trailDuration = 400 * TIME_SCALE;
     const shell = createParticle(x, y, hueBase, trailDuration + 40);
     shell.classList.add('shell-trail');
     shell.style.transitionDuration = `${trailDuration}ms`;
@@ -169,7 +187,7 @@
 
   function spawnSmallBurst(x, y, hueBase) {
     const count = Math.floor(rand(12, 20));
-    const duration = 1500 * TIME_SCALE; // ANDROID FIX
+    const duration = 1500 * TIME_SCALE;
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration + rand(0, 120));
       activeParticles.add(p);
@@ -192,7 +210,7 @@
 
   function spawnWillowBurst(x, y, hueBase) {
     const count = Math.floor(rand(8, 12));
-    const duration = 3000 * TIME_SCALE; // ANDROID FIX
+    const duration = 3000 * TIME_SCALE;
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration + rand(0, 200));
       p.classList.add('fire-trail');
@@ -219,7 +237,7 @@
   function spawnGoldCascade(x, y) {
     const hueBase = 50;
     const count = Math.floor(rand(10, 18));
-    const duration = 3000 * TIME_SCALE; // ANDROID FIX
+    const duration = 3000 * TIME_SCALE;
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration + rand(0, 200));
       p.classList.add('cascade-trail');
@@ -246,7 +264,7 @@
   function spawnSpiderBurst(x, y) {
     const hueBase = getThemeHue();
     const count = Math.floor(rand(8, 12));
-    const duration = 3000 * TIME_SCALE; // ANDROID FIX
+    const duration = 3000 * TIME_SCALE;
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration + rand(0, 240));
       p.classList.add('spider-trail');
@@ -273,9 +291,8 @@
   function spawnRingBurst(x, y) {
     const hueBase = getThemeHue();
     const count = Math.floor(rand(20, 32));
-    const duration = 4000 * TIME_SCALE; // ANDROID FIX
+    const duration = 4000 * TIME_SCALE;
     const ringRadius = MOBILE ? 60 : 100;
-
     for (let i = 0; i < count; i++) {
       const p = createParticle(x, y, hueBase, duration);
       p.classList.add('ring-particle');
@@ -315,9 +332,11 @@
     s.className = 'bonus-spark';
     s.style.left = x - 3 + 'px';
     s.style.top = y - 3 + 'px';
+    s.style.zIndex = '99999';
+    s.style.pointerEvents = 'none';
     s.style.setProperty('--x', `${rand(-18, 18).toFixed(1)}px`);
     s.style.setProperty('--y', `${rand(-12, -28).toFixed(1)}px`);
-    document.body.appendChild(s);
+    fireContainer.appendChild(s);
     activeSparks.add(s);
     setTimeout(() => {
       s.remove();
