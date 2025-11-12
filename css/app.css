@@ -1080,6 +1080,30 @@ h1 {
   transition: transform 0.18s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease, color 0.25s ease;
 }
 
+/* Espaçamento entre os itens da lista de limites */
+#tarefasLimitadasLista {
+  display: flex; /* garante coluna */
+  flex-direction: column;
+  gap: 8px; /* << distância entre os itens */
+}
+
+/* Respiro interno e leitura melhor */
+#tarefasLimitadasLista li {
+  padding: 6px 0;
+  line-height: 1.45;
+  border-bottom: 1px dashed #2a2a2a; /* opcional, remove se não quiser linha */
+}
+#tarefasLimitadasLista li:last-child {
+  border-bottom: none;
+}
+
+/* (opcional) afasta ícone do texto */
+#tarefasLimitadasLista li .icon,
+#tarefasLimitadasLista li i,
+#tarefasLimitadasLista li svg {
+  margin-right: 6px;
+}
+
 #tarefasLimitadasLista button:hover {
   border-color: rgba(255, 215, 0, 0.55);
   box-shadow: 0 1px 0 rgba(255, 215, 0, 0.12) inset, 0 -1px 0 rgba(0, 0, 0, 0.6) inset, 0 0 18px rgba(255, 215, 0, 0.35);
@@ -1172,4 +1196,83 @@ h1 {
   gap: 12px;
   flex-wrap: wrap;
   margin: 6px 0 10px;
+}
+
+/* === Inputs dark + borda amarela + texto visível (escopo .section) === */
+.section input:not([type='checkbox']):not([type='radio']),
+.section select,
+.section textarea {
+  background-color: #1a1a1a !important; /* fundo escuro */
+  color: #e7e7e7 !important; /* texto claro */
+  border: 1px solid #ffd700 !important; /* borda amarela */
+}
+
+/* placeholders visíveis no dark */
+.section input::placeholder,
+.section textarea::placeholder {
+  color: #9a9a9a !important;
+  opacity: 1;
+}
+
+/* menu de opções do select (quando aberto) no tema dark */
+.section select option {
+  background: #1a1a1a;
+  color: #e7e7e7;
+}
+
+/* foco discreto (anel suave) */
+.section input:not([type='checkbox']):not([type='radio']):focus,
+.section select:focus,
+.section textarea:focus {
+  outline: none;
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+}
+
+/* desabilitados: mesma base escura, borda um pouco menos saturada */
+.section input:disabled,
+.section select:disabled,
+.section textarea:disabled {
+  background-color: #1a1a1a !important;
+  color: #8c8c8c !important;
+  border-color: #e6c200 !important;
+}
+
+.chip-desconto-lingerie {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(212, 162, 26, 0.75);
+  background: rgba(212, 162, 26, 0.08);
+  color: #ffd54d;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+  box-shadow: inset 0 0 12px rgba(212, 162, 26, 0.05);
+}
+.chip-desconto-lingerie .chip-pct {
+  border: 1px solid rgba(212, 162, 26, 0.6);
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(255, 215, 0, 0.1);
+}
+.chip-preview {
+  margin-top: 6px;
+  color: #d1c089;
+  font-size: 12px;
+}
+.chip-preview .pv-label {
+  opacity: 0.8;
+  margin-right: 6px;
+}
+.chip-preview .pv-old {
+  text-decoration: line-through;
+  opacity: 0.6;
+  margin-right: 6px;
+}
+.chip-preview .pv-new {
+  color: #ffda55;
 }

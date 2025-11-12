@@ -17,7 +17,13 @@ const FIXED_VALUES_GANHO = {
   'Peidar na cara': 150,
 };
 
-const BONUS_ESPECIAL_MULTIPLIER = 1.3; // 1.3x
+// const BONUS_ESPECIAL_MULTIPLIER = 0.85; // 1.3x
+
+/* BÔNUS em GANHOS (+30%) */
+const BONUS_GANHO_MULTIPLIER = 1.15;
+
+/* DESCONTO em COMPRAS (-15%) — use só se quiser mesmo aplicar desconto nos gastos */
+const DESCONTO_COMPRA_MULTIPLIER = 0.85;
 
 const ELIGIBLE_TASKS = new Set(['Videogames Competitivos', 'Perfil', 'Jogos de tabuleiro com amigas', 'Buraco']);
 

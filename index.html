@@ -10,6 +10,7 @@
 
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/bonusAtivoGPT.css" />
+    <link rel="stylesheet" href="css/chicote.css" />
   </head>
   <body>
     <!-- Splash / Loading overlay -->
@@ -32,8 +33,12 @@
 
       <div class="section">
         <div id="bonusActiveBanner">
-          <span class="bonus-text">BÔNUS 1,3X</span>
-          <span class="bonus-icon">⚡</span>
+          <span class="bonus-text">BÔNUS 15% CRÉDITO</span>
+          <span class="bonus-icon">✨</span>
+        </div>
+        <div id="bonusActiveBanner">
+          <span class="bonus-text">DESCONTO 15% COMPRAS</span>
+          <span class="bonus-icon">💥</span>
         </div>
 
         <!-- cabeçalho com título + botão do contrato à direita -->
@@ -50,8 +55,8 @@
 
         <!-- ações -->
         <div class="btn-row">
-          <button id="resetSaldo">Resetar Saldo</button>
-          <button id="limparHistorico">Limpar Histórico</button>
+          <button type="button" id="resetSaldo">Resetar Saldo</button>
+          <button type="button" id="limparHistorico">Limpar Histórico</button>
         </div>
 
         <div class="controle-saldo">
@@ -198,15 +203,20 @@
       </div>
     </div>
 
+    <!-- Camada das chamas -->
+    <canvas id="fx-embers" aria-hidden="true"></canvas>
+
+    <script defer src="js/chicote.js"></script>
+    <script defer src="js/splashAmimacao.js"></script>
     <script defer src="js/storage.js"></script>
     <script defer src="js/utils.js"></script>
     <script defer src="js/bonusEspecial.js"></script>
     <script defer src="js/ganhoFixo.js"></script>
     <script defer src="js/tarefasPendentes.js"></script>
     <script defer src="js/timer.js"></script>
-    <script defer src="js/splashAmimacao.js"></script>
     <script defer src="js/serviceWorker.js"></script>
-    <script defer src="js/efeitoBonusAtivo.js"></script>
+    <script defer src="js/efeitoBonusAtivoGanhoCredito.js"></script>
+    <script defer src="js/efeitoBonusAtivoCompraServico.js"></script>
     <script defer src="js/chovendoGrana.js"></script>
     <script src="js/appMain.js"></script>
   </body>

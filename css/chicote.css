@@ -1,0 +1,7 @@
+/* Brasas / fagulhas douradas */
+#fx-embers {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4; /* acima do fundo, abaixo dos cards */
+}

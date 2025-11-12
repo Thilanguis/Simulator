@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const adicionarBtn = document.getElementById('adicionar');
   const resetBtn = document.getElementById('resetSaldo');
   const limparBtn = document.getElementById('limparHistorico');
+  const enviarHistoricoWhatsAppBtn = document.getElementById('enviarHistoricoWhatsApp');
 
   const tipoTransacaoSelect = document.getElementById('tipoTransacao');
   const selectTarefaSelect = document.getElementById('selectTarefa');
@@ -39,8 +40,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------
   // historico, saldoDominadora, tarefasPendentes devem existir via outros arquivos (storage.js)
   // Garante arrays
-  window.historico = Array.isArray(window.historico) ? window.historico : JSON.parse(localStorage.getItem('historico') || '[]');
-  window.tarefasPendentes = Array.isArray(window.tarefasPendentes) ? window.tarefasPendentes : JSON.parse(localStorage.getItem('tarefasPendentes') || '[]');
+  if (!Array.isArray(typeof historico !== 'undefined' ? historico : undefined)) {
+    historico = JSON.parse(localStorage.getItem('historico') || '[]');
+  }
+  if (!Array.isArray(typeof tarefasPendentes !== 'undefined' ? tarefasPendentes : undefined)) {
+    tarefasPendentes = JSON.parse(localStorage.getItem('tarefasPendentes') || '[]');
+  }
 
   // Sistema de bloqueios
   let tarefasBloqueadas = JSON.parse(localStorage.getItem('tarefasBloqueadas') || '[]');
@@ -140,6 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
     historicoElement.innerHTML = '';
 
     const filtered = getFilteredHistorico();
+    if (enviarHistoricoWhatsAppBtn) {
+      enviarHistoricoWhatsAppBtn.style.display = filtered.length ? 'block' : 'none';
+    }
     if (!filtered.length) {
       historicoElement.innerHTML = '<div style="color:#999;border:1px dashed #444;padding:12px;border-radius:10px;text-align:center">Sem registros para o período.</div>';
       return;
@@ -239,8 +247,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const nomeBonito = getBlockedDisplayName(tarefa.nome);
       div.innerHTML = `
         <span title="Libera em ${fmtTempoRestante(diffMs)}">🔒 <b>${nomeBonito}</b> — libera em ${diffDias}d ${diffHoras}h ${diffMin}m</span>
-        <button onclick="removerTarefaLimitada('${tarefa.nome}')" title="Remover bloqueio">🗑️</button>
-      `;
+        `;
+      // !!PARA ATIVAR LIXEIRA QUE REMOVE BLOQUEIO COLOCAR DENTRO DA STRING ACIMA!!
+      // <button onclick="removerTarefaLimitada('${tarefa.nome}')" title="Remover bloqueio">🗑️</button>
       lista.appendChild(div);
     });
   }
@@ -334,25 +343,79 @@ document.addEventListener('DOMContentLoaded', () => {
       renderHistorico();
     });
 
+  // Enviar histórico por WhatsApp
+  if (enviarHistoricoWhatsAppBtn) {
+    enviarHistoricoWhatsAppBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      try {
+        const numeroWhatsApp = '+14386305973'; // ajuste se quiser
+        const filtered = getFilteredHistorico();
+        if (!filtered.length) {
+          alert('Não há itens no histórico para enviar.');
+          return;
+        }
+        const dataSelec = filterDateInput && filterDateInput.value ? new Date(filterDateInput.value) : null;
+        const titulo = dataSelec ? `📅 Histórico do dia ${dataSelec.toLocaleDateString('pt-BR')}` : '📜 Histórico completo (mais recentes primeiro)';
+        const linhas = filtered.map((h, idx) => {
+          const d = new Date(h.timestamp);
+          const quando = d.toLocaleString('pt-BR');
+          const tipo = h.tipo === 'gasto' ? 'Gasto' : 'Ganho';
+          const val = (h.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          return `${idx + 1}. [${quando}] ${tipo}: ${h.descricao} — ${val}`;
+        });
+        const total = filtered.reduce((acc, h) => acc + (h.tipo === 'gasto' ? -h.valor : h.valor), 0);
+        const totalFmt = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const saldoFmt = (typeof saldoDominadora !== 'undefined' ? saldoDominadora : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const mensagem = `${titulo}\n\n${linhas.join('\n')}\n\n— Total líquido no período: *${totalFmt}*\n— Saldo atual: *${saldoFmt}*`;
+        const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+        window.open(urlWhatsApp, '_blank');
+      } catch (e) {
+        console.error('Falha ao abrir WhatsApp:', e);
+        alert('Não foi possível abrir o WhatsApp. Tente novamente.');
+      }
+    });
+  }
+
   // Botão: Resetar Saldo
   if (resetBtn) {
-    resetBtn.addEventListener('click', () => {
+    resetBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
       if (!confirm('Tem certeza que deseja zerar o saldo?')) return;
-      window.saldoDominadora = 0;
+
+      // zera e persiste
+      saldoDominadora = 0;
+      try {
+        localStorage.setItem('saldoDominadora', '0');
+      } catch {}
+
+      // atualiza UI imediatamente
       atualizarSaldo();
+      // opcional: adiciona registro no histórico se quiser
+      // adicionarHistorico('Reset de saldo', 0, 'ganho');
+
+      // (garantia) re-render do histórico com o novo saldo mostrado nos cards
+      renderHistorico();
     });
   }
 
   // Botão: Limpar Histórico
   if (limparBtn) {
-    limparBtn.addEventListener('click', () => {
+    limparBtn.addEventListener('click', (ev) => {
+      ev.preventDefault();
       if (!window.historico || window.historico.length === 0) {
         alert('O histórico já está vazio.');
         return;
       }
       if (!confirm('Apagar todo o histórico de transações?')) return;
-      window.historico = [];
-      localStorage.setItem('historico', JSON.stringify(window.historico));
+
+      // limpa e persiste
+      historico.length = 0;
+      try {
+        localStorage.setItem('historico', JSON.stringify([]));
+      } catch {}
+
+      // limpa filtro (se houver) e atualiza UI
+      if (filterDateInput) filterDateInput.value = '';
       renderHistorico();
     });
   }
@@ -475,7 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'pt-BR'
           )}\n👑 *Saldo Atual:* R$ ${saldoDominadora.toLocaleString('pt-BR')}\n----------------------------------------\n✅ Ganhe saldo e compre serviços sem moderação! 🙏\n`;
           const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
-          // window.open(urlWhatsApp, '_blank'); // habilite se quiser abrir automaticamente
+          window.open(urlWhatsApp, '_blank'); // habilite se quiser abrir automaticamente
         } catch {}
       } else {
         // ------------------------------

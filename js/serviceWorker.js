@@ -1,15 +1,9 @@
-/* =================================================================== */
-/* SERVICE WORKER (PWA)                         */
-/* =================================================================== */
-
-// Dentro do seu arquivo serviceWorker.js ou script de registro
-if ('serviceWorker' in navigator) {
+/* ===================================================================
+   SERVICE WORKER (PWA)
+   =================================================================== */
+if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
   navigator.serviceWorker
     .register('./sw.js', { scope: './' })
-    .then(function (registration) {
-      console.log('ServiceWorker registrado com sucesso no escopo: ', registration.scope);
-    })
-    .catch(function (err) {
-      console.warn('Falha no registro do ServiceWorker: ', err);
-    });
+    .then((reg) => console.log('ServiceWorker registrado:', reg.scope))
+    .catch((err) => console.warn('Falha no registro do ServiceWorker:', err));
 }
