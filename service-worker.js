@@ -1,6 +1,6 @@
 // sw.js
 // IMPORTANTE: Mude para a próxima versão (ex: v26)
-const CACHE_NAME = 'simulador-cache-12';
+const CACHE_NAME = 'simulador-cache-13';
 const urlsToCache = [
   '.',
   'index.html', // --- CSS ---
