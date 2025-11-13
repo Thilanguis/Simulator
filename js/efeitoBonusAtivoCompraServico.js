@@ -1,21 +1,22 @@
-// Aplica -15% em COMPRAS quando o bônus-lingerie estiver ativo,
-// sem editar appMain.js (usa listener em captura no botão Registrar).
+// efeitoBonusAtivoCompraServico.js
+// Aplica -15% SOMENTE a compras de serviço/tarefa comuns
+// quando o bônus-lingerie estiver ativo. Ignora redutores,
+// aceleração global e qualquer item de “reduzir/accelerar”.
+// Não precisa alterar appMain.js: usa listener em CAPTURA
+// no botão Registrar.
 
 (function () {
-  const DISCOUNT_RATE = 0.15; //15% de desconto
-  const PCT_LABEL = `-${Math.round(DISCOUNT_RATE * 100)}%`;
+  const DISCOUNT_RATE = 0.15; // 15%
   const MULT = 1 - DISCOUNT_RATE; // 0.85
+  const CHIP_TEXT = `-${Math.round(DISCOUNT_RATE * 100)}%`;
 
-  // Helpers de estado já existentes no app:
+  // -------- Helpers do app --------
   function bonusOn() {
     try {
       return !!window.bonusEspecialAtivo;
     } catch {
       return false;
     }
-  }
-  function isReducerOption(opt) {
-    return !!(opt && opt.dataset && opt.dataset.reduzHoras); // opções que reduzem bloqueio têm data-reduz-horas
   }
   function parseVal(v) {
     const [valorStr, tarefa, descricao] = String(v || '').split('|');
@@ -29,14 +30,44 @@
     return (n || 0).toLocaleString('pt-BR');
   }
 
-  const tipoTransacao = document.getElementById('tipoTransacao');
-  const selectTarefa = document.getElementById('selectTarefa');
+  // Heurísticas para saber se a opção é “redutor/acceleração”
+  function isReducerOption(opt) {
+    return !!(opt && opt.dataset && opt.dataset.reduzHoras);
+  }
+  function isAccelerationOrReduceName(name) {
+    if (!name) return false;
+    const n = name.toLowerCase();
+    // cobre nomes “Reduzir Xh”, “Aceleração ...”, e ID canônico
+    return n.includes('reduzir') || n.includes('acelera') || n === 'acelerar_global_4d_1h';
+  }
+
+  // Elementos
+  const tipoTransacao = document.getElementById('tipoTransacao'); // 'gasto' / 'ganho'
+  const selectTarefa = document.getElementById('selectTarefa'); // opções "valor|nome|desc"
   const adicionarBtn = document.getElementById('adicionar');
   const chkBonus = document.getElementById('bonusEspecialCheckbox');
 
   if (!selectTarefa || !adicionarBtn) return;
 
-  // ---------- UI: chip “-15% Bônus lingerie” + preview de preço ----------
+  // --------- Regra de elegibilidade ---------
+  function isEligibleForDiscount() {
+    const isGasto = !tipoTransacao || tipoTransacao.value === 'gasto';
+    if (!isGasto) return false;
+    if (!bonusOn()) return false;
+
+    const opt = selectTarefa.selectedOptions && selectTarefa.selectedOptions[0];
+    if (!opt || !opt.value || opt.value === '0') return false;
+
+    if (isReducerOption(opt)) return false; // opções com data-reduz-horas
+
+    const parsed = parseVal(opt.value);
+    if (!parsed.valor || parsed.valor <= 0) return false;
+    if (isAccelerationOrReduceName(parsed.tarefa)) return false; // nomes que não recebem desconto
+
+    return true;
+  }
+
+  // --------- UI (chip + preview) ---------
   let chip, preview;
 
   function ensureChip() {
@@ -59,7 +90,7 @@
       'box-shadow:inset 0 0 12px rgba(212,162,26,.05)',
     ].join(';');
     const pct = document.createElement('span');
-    pct.textContent = PCT_LABEL;
+    pct.textContent = CHIP_TEXT;
     pct.style.cssText = 'border:1px solid rgba(212,162,26,.6);padding:2px 6px;border-radius:999px;background:rgba(255,215,0,.1)';
     const txt = document.createElement('span');
     txt.textContent = 'Bônus lingerie';
@@ -78,10 +109,7 @@
   }
 
   function updateUI() {
-    // Mostra chip só quando: bônus ON, tipo = gasto e opção não-redutor selecionada
-    const isGasto = !tipoTransacao || tipoTransacao.value === 'gasto';
-    const opt = selectTarefa.selectedOptions && selectTarefa.selectedOptions[0];
-    const show = bonusOn() && isGasto && opt && !isReducerOption(opt) && opt.value && opt.value !== '0';
+    const show = isEligibleForDiscount();
 
     // chip
     if (show) ensureChip().style.display = 'inline-flex';
@@ -91,14 +119,9 @@
     const block = ensurePreview();
     if (show) {
       const { valor } = parseVal(selectTarefa.value);
-      if (valor > 0) {
-        const desc = Math.round(valor * MULT);
-        block.innerHTML = ['<span style="opacity:.8">Preço com bônus: </span>', `<span style="text-decoration:line-through;opacity:.6;margin-right:6px">R$ ${fmtBR(valor)}</span>`, `<strong style="color:#ffda55">R$ ${fmtBR(desc)}</strong>`].join('');
-        block.style.display = 'block';
-      } else {
-        block.style.display = 'none';
-        block.textContent = '';
-      }
+      const desc = Math.round(valor * MULT);
+      block.innerHTML = ['<span style="opacity:.8">Preço com bônus: </span>', `<span style="text-decoration:line-through;opacity:.6;margin-right:6px">R$ ${fmtBR(valor)}</span>`, `<strong style="color:#ffda55">R$ ${fmtBR(desc)}</strong>`].join('');
+      block.style.display = 'block';
     } else {
       block.style.display = 'none';
       block.textContent = '';
@@ -112,40 +135,29 @@
   document.addEventListener('DOMContentLoaded', updateUI);
   updateUI();
 
-  // ---------- Aplicação do desconto na HORA DE REGISTRAR ----------
-  // Estratégia: listener em CAPTURA no botão. Antes do handler do appMain,
-  // trocamos TEMPORARIAMENTE o value da <option> selecionada para o valor com desconto.
-  // Depois restauramos imediatamente (setTimeout 0).
+  // --------- Aplicação do desconto ao Registrar ---------
+  // Listener em CAPTURA para ajustar temporariamente o value da <option>.
   adicionarBtn.addEventListener(
     'click',
-    function onCapture(e) {
-      // quer COMPRAR?
-      const isGasto = !tipoTransacao || tipoTransacao.value === 'gasto';
-      if (!isGasto) return;
-
+    function onCapture() {
+      if (!isEligibleForDiscount()) return;
       const opt = selectTarefa.selectedOptions && selectTarefa.selectedOptions[0];
       if (!opt) return;
 
-      // só aplica quando bônus ativo e não for redutor
-      if (!bonusOn() || isReducerOption(opt)) return;
-
       const parsed = parseVal(opt.value);
-      if (!parsed || !parsed.valor || parsed.valor <= 0) return;
-
-      // aplica desconto
-      const original = opt.value;
       const descontado = Math.round(parsed.valor * MULT);
-      // salva original para restaurar
+      const original = opt.value;
+
+      // set temporário
       opt.dataset.originalValueTmp = original;
       opt.value = `${descontado}|${parsed.tarefa}|${parsed.descricao}`;
 
-      // restaura após os listeners do appMain rodarem
+      // restaura após os outros listeners do botão rodarem
       setTimeout(() => {
         if (opt.dataset.originalValueTmp) {
           opt.value = opt.dataset.originalValueTmp;
           delete opt.dataset.originalValueTmp;
         }
-        // re-render UI preview (caso necessário)
         updateUI();
       }, 0);
     },
