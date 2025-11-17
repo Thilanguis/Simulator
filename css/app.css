@@ -1178,6 +1178,7 @@ h1 {
   align-items: center;
   gap: 12px;
   margin: 6px 0 14px;
+  flex-wrap: wrap;
 }
 .saldo-label {
   color: #d6c27a;
