@@ -6,8 +6,8 @@ const FIXED_VALUES_GANHO = {
   'Pés na cara': 400,
   'Tapa de pé na cara': 1,
   'Chupar peito': 400,
-  'Cuspir na cara com catarro': 500,
-  'Mijar na boca': 300,
+  'Cuspir na cara': 320,
+  'Mijar na boca': 350,
   'Dedo do meio com desprezo': 20,
   'Vestir cinta e comer dominado': 3000,
   'Dar uma meleca para comer': 200,
@@ -28,7 +28,8 @@ const DESCONTO_COMPRA_MULTIPLIER = 0.85;
 const ELIGIBLE_TASKS = new Set(['Videogames Competitivos', 'Perfil', 'Jogos de tabuleiro com amigas', 'Buraco']);
 
 // Carrega o estado do localStorage
-let saldoDominadora = parseInt(localStorage.getItem('saldoDominadora') || '0');
+let saldoDominadora = parseFloat(localStorage.getItem('saldoDominadora') || '0');
+
 let historico = JSON.parse(localStorage.getItem('historico') || '[]');
 // Array para tarefas pendentes, persistente
 let tarefasPendentes = JSON.parse(localStorage.getItem('tarefasPendentes') || '[]');

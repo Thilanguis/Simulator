@@ -3,7 +3,7 @@ class RainMoney {
   constructor(emoji = '💵', intensity = 'med') {
     this.emoji = emoji;
     this.intensityLevels = { low: 10, med: 25, high: 45 };
-    this.num = this.intensityLevels[intensity] || 25;
+    this.num = this.intensityLevels[intensity] || 45;
     this.fallingEmojis = [];
     this.smokeParticles = [];
     this.container = document.createElement('div');

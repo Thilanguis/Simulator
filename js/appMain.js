@@ -68,9 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const LIMITES_TAREFA_HORAS = {
-    'Ela decide toda a agenda do dia': 24 * 15, // 15 dias
+    'Ela decide toda a agenda do dia': 24 * 14, // 15 dias
     'Vale de escolha de FILME': 24 * 10, // 10 dias
     'Vale sair sozinha com amiga': 24 * 7, // 7 dias
+    'Ganha 60 dólares na vida real': 24 * 4, // 4 dias
     // redutores (IDs canônicos)
     REDUZIR_BLOQUEIO_6H: 6,
     REDUZIR_BLOQUEIO_12H: 12,
@@ -1014,6 +1015,32 @@ document.addEventListener('DOMContentLoaded', () => {
         valor = parseInt(valorInput);
         tarefa = ganhoSelecionado;
 
+        // 🔥 Extra: detalhar "Pés na cara" com os checkboxes marcados
+        try {
+          // Só faz sentido se for o ganho de pés
+          if (ganhoSelecionado && ganhoSelecionado.includes('Pés na cara')) {
+            const extras = [];
+
+            const chkChule = document.getElementById('chkChule');
+            const chkFrancesinha = document.getElementById('chkFrancesinha');
+
+            if (chkChule && chkChule.checked) {
+              extras.push('pés com chulé');
+            }
+            if (chkFrancesinha && chkFrancesinha.checked) {
+              extras.push('francesinha');
+            }
+
+            if (extras.length) {
+              // Exemplo final no histórico:
+              // "Pés na cara — pés com chulé + francesinha"
+              tarefa = `${ganhoSelecionado} — ${extras.join(' + ')}`;
+            }
+          }
+        } catch (e) {
+          console.warn('Falha ao montar descrição detalhada de Pés na cara:', e);
+        }
+
         const multBonus = typeof getBonusEspecialMultiplier === 'function' ? getBonusEspecialMultiplier() : 1;
         valor = Math.round(valor * multBonus * 100) / 100;
 
@@ -1103,10 +1130,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const vpm = parseFloat(valorPorMinutoInput.value) || 0;
         if (vpm <= 0) return alert('Insira um valor válido por minuto antes de terminar.');
 
-        const valorTotal = typeof calcularValorTotal === 'function' ? calcularValorTotal(tempoSegundos, vpm) : Math.round((tempoSegundos / 60) * vpm);
+        // calcula o total acumulado SEM cortar as casas decimais
+        let valorTotal = typeof calcularValorTotal === 'function' ? calcularValorTotal(tempoSegundos, vpm) : (tempoSegundos / 60) * vpm;
 
+        // aplica o multiplicador do bônus (quando a langerie está ativa)
+        // e arredonda só para DUAS casas decimais
         const multBonus = typeof getBonusEspecialMultiplier === 'function' ? getBonusEspecialMultiplier() : 1;
-        const valorCredito = Math.round(valorTotal * multBonus);
+
+        const valorCredito = Math.round(valorTotal * multBonus * 100) / 100;
 
         if (valorCredito > 0) {
           saldoDominadora += valorCredito;

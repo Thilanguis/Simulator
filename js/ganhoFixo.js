@@ -6,6 +6,7 @@ function calcularValorGanho() {
   const selectGanho = document.getElementById('selectGanho');
   const valorGanhoInput = document.getElementById('valorGanho');
   const pesNaCaraOptions = document.getElementById('pesNaCaraOptions');
+  const comCatarro = document.getElementById('comCatarro');
   const quantidadeInput = document.getElementById('quantidadeMultiplicador');
   const labelQuantidade = document.getElementById('labelQuantidadeMultiplicador');
   const valorSelecionado = selectGanho.value;
@@ -14,6 +15,7 @@ function calcularValorGanho() {
   pesNaCaraOptions.style.display = 'none';
   quantidadeInput.style.display = 'none';
   labelQuantidade.style.display = 'none';
+  comCatarro.style.display = 'none';
   valorGanhoInput.readOnly = false;
   // reset do campo valor para evitar confusões
   valorGanhoInput.value = '';
@@ -41,6 +43,13 @@ function calcularValorGanho() {
       quantidadeInput.value = quantidade;
       // multiplicar valor base pelo número escolhido
       valorGanhoInput.value = valorBase * quantidade;
+      return;
+    }
+
+    if (valorSelecionado === 'Cuspir na cara') {
+      comCatarro.style.display = 'block';
+      if (document.getElementById('chkCatarro').checked) valorBase += parseInt(document.getElementById('chkChule').dataset.value);
+      valorGanhoInput.value = valorBase;
       return;
     }
 

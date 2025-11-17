@@ -81,19 +81,22 @@
       'margin-top:6px',
       'padding:4px 8px',
       'border-radius:999px',
-      'border:1px solid rgba(212,162,26,.75)',
-      'background:rgba(212,162,26,.08)',
-      'color:#ffd54d',
+      'border:1px solid rgba(248,113,113,.75)', // borda vermelho suave
+      'background:rgba(127,29,29,.55)', // fundo vinho escuro
+      'color:#fecaca', // texto rosado claro
       'font-weight:800',
       'font-size:12px',
       'letter-spacing:.3px',
-      'box-shadow:inset 0 0 12px rgba(212,162,26,.05)',
+      'box-shadow:inset 0 0 12px rgba(127,29,29,.45)',
     ].join(';');
+
     const pct = document.createElement('span');
-    pct.textContent = CHIP_TEXT;
-    pct.style.cssText = 'border:1px solid rgba(212,162,26,.6);padding:2px 6px;border-radius:999px;background:rgba(255,215,0,.1)';
+    pct.textContent = CHIP_TEXT; // "-15%"
+    pct.style.cssText = 'border:1px solid rgba(248,113,113,.9);' + 'padding:2px 6px;' + 'border-radius:999px;' + 'background:rgba(239,68,68,.25)';
+
     const txt = document.createElement('span');
     txt.textContent = 'Bônus lingerie';
+
     chip.append(pct, txt);
     selectTarefa.parentElement.appendChild(chip);
     return chip;
