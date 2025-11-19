@@ -60,45 +60,69 @@
 
   const setores = [
     // ORGASMOS / MIMO / SERVIÇO
-    { icon: '👙', label: 'LING', full: 'Ativar bônus lingerie hoje', cor: '#e6a0ff' }, // lilás especial
-    { icon: '🧼', label: 'CRAV', full: 'Tirar cravos — R$1.500', cor: '#ffd27f' }, // amarelo
+    { icon: '👙', label: 'LING', full: 'Ativar bônus lingerie hoje', cor: '#ffd27f' }, // amarelo
+    { icon: '🧼', label: 'CRAV', full: 'Tirar cravos — R$1.500', cor: '#b0ff8a' }, // verde
     { icon: '🎬🚫🇰🇷', label: 'NO-KOR', full: 'Filme proibido 🇰🇷 — R$3.000', cor: '#8de8ff' }, // azul
-    { icon: '🦶', label: 'PÉS', full: 'Massagem nos pés — R$3.500', cor: '#b0ff8a' }, // verde
+    { icon: '🦶', label: 'PÉS', full: 'Massagem nos pés — R$3.500', cor: '#ffb3e6' }, // rosa
+
     { icon: '☕', label: 'CAFÉ', full: 'Café na cama — R$4.000', cor: '#ffd27f' }, // amarelo
-    { icon: '🧽', label: 'LAV', full: 'Lavar/esfoliar os pés — R$4.500', cor: '#ffb3e6' }, // rosa
-    { icon: '💆', label: 'MASS', full: 'Massagem — R$5.000', cor: '#ffd27f' }, // amarelo
-    { icon: '🍳', label: 'JANT', full: 'Cozinhar jantar — R$6.000', cor: '#8de8ff' }, // azul
-    { icon: '💃', label: 'SAIR', full: 'Sair com amiga — R$6.500', cor: '#b0ff8a' }, // verde
-    { icon: '🛎️', label: 'SERV', full: 'Servir (2 tarefas) — R$6.500', cor: '#ffb3e6' }, // rosa
-    { icon: '🎬🇰🇷', label: 'K-OK', full: 'Filme 🇰🇷 permitido — R$12.250', cor: '#ffd27f' }, // amarelo
-    { icon: '👑', label: 'DIA', full: 'Dia dela — R$15.000', cor: '#8de8ff' }, // azul
+    { icon: '🧽', label: 'LAV', full: 'Lavar/esfoliar os pés — R$4.500', cor: '#b0ff8a' }, // verde
+    { icon: '💆', label: 'MASS', full: 'Massagem — R$5.000', cor: '#8de8ff' }, // azul
+    { icon: '🍳', label: 'JANT', full: 'Cozinhar jantar — R$6.000', cor: '#ffb3e6' }, // rosa
+
+    { icon: '💃', label: 'SAIR', full: 'Sair com amiga — R$6.500', cor: '#ffd27f' }, // amarelo
+    { icon: '🛎️', label: 'SERV', full: 'Servir (2 tarefas) — R$6.500', cor: '#b0ff8a' }, // verde
+    { icon: '🎬🇰🇷', label: 'K-OK', full: 'Filme 🇰🇷 permitido — R$12.250', cor: '#8de8ff' }, // azul
+    { icon: '👑', label: 'DIA', full: 'Decide a agenda do dia — R$15.000', cor: '#ffb3e6' }, // rosa
+
     { icon: '💵', label: '60', full: 'Ganha US$60 — R$25.000', cor: '#ffd27f' }, // amarelo
 
-    // REDUTORES DE TEMPO — intercalando verde/azul
+    // REDUTORES DE TEMPO
     { icon: '⌛', label: '-6H', full: 'Reduzir 6h — R$2.000', cor: '#b0ff8a' }, // verde
     { icon: '⌛', label: '-12H', full: 'Reduzir 12h — R$3.500', cor: '#8de8ff' }, // azul
-    { icon: '📅', label: '-1D', full: 'Reduzir 1 dia — R$6.000', cor: '#b0ff8a' }, // verde
-    { icon: '📅', label: '-3D', full: 'Reduzir 3 dias — R$11.000', cor: '#8de8ff' }, // azul
+    { icon: '📅', label: '-1D', full: 'Reduzir 1 dia — R$6.000', cor: '#ffb3e6' }, // rosa
+    { icon: '📅', label: '-3D', full: 'Reduzir 3 dias — R$11.000', cor: '#ffd27f' }, // amarelo
     { icon: '📅', label: '-4D', full: 'Reduzir 4 dias — R$18.000', cor: '#b0ff8a' }, // verde
 
     // CASTIGO
-    { icon: '😈', label: 'NADA', full: 'Nada hoje 😈', cor: '#ffb3e6' }, // rosa
+    { icon: '😈', label: 'NADA', full: 'Nada hoje 😈', cor: '#8de8ff' }, // azul
   ];
+
+  // Chances relativas de cada prêmio (% da sua tabela)
+  // chave = label do setor
+  const CHANCES_POR_LABEL = {
+    CRAV: 16.58, // Tirar cravos
+    '-6H': 12.44, // Reduzir 6h
+    LING: 8.29, // Ativar bônus lingerie hoje
+    'NO-KOR': 8.29, // Vale escolher filme/série 🚫🇰🇷
+    PÉS: 7.11, // Massagem nos pés
+    '-12H': 7.11, // Reduzir 12h
+    CAFÉ: 6.22, // Café da manhã na cama
+    LAV: 5.53, // Lavar os pés e esfoliar
+    MASS: 4.98, // Massagem
+    JANT: 4.15, // Cozinhar jantar
+    '-1D': 4.15, // Reduzir 1 dia
+    NADA: 4.15, // Nada hoje 😈
+    SAIR: 3.83, // Vale sair sozinha com amiga
+    SERV: 3.83, // Obrigação de servir (2 tarefas)
+    '-3D': 2.26, // Reduzir 3 dias
+    'K-OK': 2.03, // Vale escolher FILME ✔️🇰🇷
+    DIA: 1.66, // Ela decide toda a agenda do dia
+    '-4D': 1.38, // Reduzir 4 dias
+    60: 0.99, // Ganha 60 dólares
+  };
+
+  // se algum setor não estiver na tabela, cai aqui (peso = 1)
+  function getPesoSetor(setor) {
+    return CHANCES_POR_LABEL[setor.label] ?? 1;
+  }
 
   const TOTAL_SETORES = setores.length;
   const ANGULO = 360 / TOTAL_SETORES;
   const OFFSET = -90; // roda começa virada "pra cima"
 
-  const PALETTE_CORES = [
-    '#ffd27f', // amarelo
-    '#b0ff8a', // verde
-    '#8de8ff', // azul
-    '#ffb3e6', // rosa claro
-  ];
-
   function getSetorColor(index) {
-    // pega cores só da paleta, intercalando ao redor da roleta
-    return PALETTE_CORES[index % PALETTE_CORES.length];
+    return setores[index].cor;
   }
 
   // ======================================
@@ -121,15 +145,18 @@
       box-shadow: 0 0 20px #000;
     `;
 
-    // ---------- FUNDO EM CONIC-GRADIENT ----------
+    // ---------- FUNDO EM CONIC-GRADIENT (CORRIGIDO) ----------
     let stops = [];
     for (let i = 0; i < TOTAL_SETORES; i++) {
-      const start = OFFSET + i * ANGULO;
-      const end = start + ANGULO;
+      // aqui a gente divide certinho de 0° a 360°
+      const start = i * ANGULO;
+      const end = (i + 1) * ANGULO;
       const cor = getSetorColor(i);
       stops.push(`${cor} ${start}deg ${end}deg`);
     }
-    wheel.style.background = `conic-gradient(${stops.join(',')})`;
+
+    // e usa o OFFSET só para girar o gradiente inteiro
+    wheel.style.background = `conic-gradient(from ${OFFSET}deg, ${stops.join(',')})`;
 
     // ---------- BOLA CENTRAL (HUB) ----------
     const hubSize = 100;
@@ -150,7 +177,7 @@
       justify-content: center;
       font-size: 42px;
     `;
-    hub.innerHTML = '🎰';
+    hub.innerHTML = '😈';
     wheel.appendChild(hub);
 
     // ---------- DIVISÓRIAS (LINHAS) ----------
@@ -248,32 +275,32 @@
     pointer.id = 'roletaPointer';
 
     pointer.style = `
-      position: absolute;
-      left: 50%;
-      top: 75px;
-      transform: translateX(-50%) rotate(180deg);
-      width: 6px;
-      height: 34px;
-      background: linear-gradient(#ffb3b3, #ff4040);
-      border-radius: 999px;
-      transform-origin: 50% 100%;
-      z-index: 50;
-      box-shadow: 0 4px 6px rgba(0,0,0,.6);
-    `;
+    position: absolute;
+    left: 50%;
+    top: 75px;
+    transform: translateX(-50%) rotate(180deg);
+    width: 7px;
+    height: 38px;
+    background: linear-gradient(#ff8080, #ff2020);
+    border-radius: 999px;
+    transform-origin: 50% 100%;
+    z-index: 50;
+    box-shadow: 0 4px 6px rgba(0,0,0,.7);
+  `;
 
     const head = document.createElement('div');
     head.style = `
-      position: absolute;
-      width: 18px;
-      height: 18px;
-      background: #222;
-      border: 2px solid #ffd700;
-      border-radius: 50%;
-      left: 50%;
-      bottom: -6px;
-      transform: translateX(-50%);
-      box-shadow: 0 2px 4px rgba(0,0,0,.7);
-    `;
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: #111;
+    border: 2px solid #ffd700;
+    border-radius: 50%;
+    left: 50%;
+    bottom: -8px;
+    transform: translateX(-50%);
+    box-shadow: 0 2px 4px rgba(0,0,0,.8);
+  `;
     pointer.appendChild(head);
 
     return pointer;
@@ -282,14 +309,22 @@
   // ---------- Animação do wiggle (mexer) ----------
   const styleWiggle = document.createElement('style');
   styleWiggle.textContent = `
-    @keyframes ponteiro-wiggle {
-      0%   { transform: translateX(-50%) rotate(180deg); }
-      25%  { transform: translateX(-50%) rotate(172deg); }
-      50%  { transform: translateX(-50%) rotate(187deg); }
-      75%  { transform: translateX(-50%) rotate(176deg); }
-      100% { transform: translateX(-50%) rotate(180deg); }
-    }
-  `;
+  @keyframes ponteiro-wiggle-forte {
+    0%   { transform: translateX(-50%) rotate(180deg); }
+    25%  { transform: translateX(-50%) rotate(172deg); }
+    50%  { transform: translateX(-50%) rotate(188deg); }
+    75%  { transform: translateX(-50%) rotate(176deg); }
+    100% { transform: translateX(-50%) rotate(180deg); }
+  }
+
+  @keyframes ponteiro-wiggle-suave {
+    0%   { transform: translateX(-50%) rotate(180deg); }
+    25%  { transform: translateX(-50%) rotate(178deg); }
+    50%  { transform: translateX(-50%) rotate(182deg); }
+    75%  { transform: translateX(-50%) rotate(179deg); }
+    100% { transform: translateX(-50%) rotate(180deg); }
+  }
+`;
   document.head.appendChild(styleWiggle);
 
   // ====================================================
@@ -350,7 +385,7 @@
       font-size: 14px;
       font-weight: 600;
     `;
-    visor.textContent = 'Clique em Girar 🎰';
+    visor.textContent = 'Clique em Girar 😈';
 
     const btnGirar = document.createElement('button');
     btnGirar.id = 'btnRoletaGirar';
@@ -400,19 +435,46 @@
     const setoresCount = TOTAL_SETORES;
     const angSetor = ANGULO;
 
-    const indiceFinal = Math.floor(Math.random() * setoresCount);
+    const indiceFinal = sortearIndicePorPeso();
+
     const anguloDoSetor = OFFSET + indiceFinal * angSetor + angSetor / 2;
 
     const voltas = 8 * 360;
     const rotFinal = rotacaoAtual + voltas + (OFFSET - anguloDoSetor);
     rotacaoAtual = rotFinal;
 
-    pointer.style.animation = 'ponteiro-wiggle .12s infinite';
+    // ponteiro balança forte no começo
+    pointer.style.animation = 'ponteiro-wiggle-forte .12s infinite';
 
     wheel.style.transition = 'transform 5.5s cubic-bezier(.12,1,.22,1)';
     wheel.style.transform = `rotate(${rotFinal}deg)`;
 
     const pregosInterval = iniciarTicsDuranteGiro(wheel);
+
+    // Sorteia um índice de setor baseado nos pesos (chances)
+    function sortearIndicePorPeso() {
+      // soma total dos pesos
+      const somaPesos = setores.reduce((acc, s) => acc + getPesoSetor(s), 0);
+
+      // número aleatório entre 0 e somaPesos
+      let r = Math.random() * somaPesos;
+
+      // varre os setores até achar em qual faixa caiu
+      for (let i = 0; i < setores.length; i++) {
+        r -= getPesoSetor(setores[i]);
+        if (r <= 0) {
+          return i;
+        }
+      }
+
+      // fallback defensivo (não deveria chegar aqui)
+      return setores.length - 1;
+    }
+
+    // perto do fim, troca pra um balanço bem mais suave
+    setTimeout(() => {
+      pointer.style.animation = 'ponteiro-wiggle-suave .18s infinite';
+    }, 3500);
 
     setTimeout(() => {
       clearInterval(pregosInterval);
@@ -557,20 +619,23 @@
     btn.id = 'btnRoletaFlutuante';
 
     btn.style = `
-      position: fixed;
-      right: 20px;
-      bottom: 20px;
-      width: 55px;
-      height: 55px;
-      border-radius: 999px;
-      border: 1px solid #ffd700;
-      background: radial-gradient(circle at top, rgba(255,215,0,.22), rgba(15,15,15,1));
-      color: #ffd700;
-      font-size: 26px;
-      cursor: pointer;
-      z-index: 99999;
-      box-shadow: 0 0 18px rgba(0,0,0,.75), 0 0 10px rgba(255,215,0,.35);
-    `;
+    position: fixed;
+    right: 32px;
+    bottom: 32px;
+    width: 60px;
+    height: 60px;
+    border-radius: 999px;
+    border: 1px solid #ffd700;
+    color: #ffd700;
+    font-size: 26px;
+    cursor: pointer;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 18px rgba(0,0,0,.75), 0 0 10px rgba(255,215,0,.35);
+    background: radial-gradient(circle at top, rgba(255,215,0,.32), rgba(15,15,15,1));
+  `;
 
     btn.textContent = '🎰';
 
@@ -587,15 +652,31 @@
     function tick() {
       const ms = msRestantes();
 
+      // Sem cooldown: botão liberado, volta pro visual normal
       if (ms <= 0) {
         btn.disabled = false;
         btn.style.opacity = '1';
+        btn.style.background = 'radial-gradient(circle at top, rgba(255,215,0,.32), rgba(15,15,15,1))';
         btn.title = 'Roleta disponível!';
         return;
       }
 
       btn.disabled = true;
-      btn.style.opacity = '.5';
+      btn.style.opacity = '.8';
+
+      // fração de tempo RESTANTE (1 no início, 0 no final)
+      const fracRestante = ms / COOLDOWN_MS;
+      const deg = Math.max(0, Math.min(360, fracRestante * 360));
+
+      // começa 100% amarelo e vai ESCURECENDO com o tempo
+      btn.style.background = `
+      conic-gradient(
+        rgba(138, 29, 38, 1) 0deg ${deg}deg,
+        rgba(40,40,40,1) ${deg}deg 360deg
+      ),
+      radial-gradient(circle at top, rgba(15,15,15,1), rgba(15,15,15,1))
+    `;
+
       btn.title = 'Próxima roleta em ' + format(ms);
     }
 
