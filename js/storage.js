@@ -4,15 +4,15 @@
 
 const FIXED_VALUES_GANHO = {
   'Pés na cara': 400,
-  'Tapa de pé na cara': 1,
-  'Chupar peito': 400,
+  'Tapa de pé na cara': 2,
+  'Chupar peito': 500,
   'Cuspir na cara': 320,
   'Mijar na boca': 350,
-  'Dedo do meio com desprezo': 20,
-  'Vestir cinta e comer dominado': 3000,
+  'Dedo do meio com desprezo': 30,
+  'Vestir cinta e comer dominado': 3500,
   'Dar uma meleca para comer': 200,
   'Comer cutícula e peles dos pés': 800,
-  'Cuspir porra (Sêmen) na boca': 1200,
+  'Cuspir porra (Sêmen) na boca': 2000,
   'Chupar buceta': 200,
   'Peidar na cara': 150,
 };

@@ -68,9 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const LIMITES_TAREFA_HORAS = {
-    'Ela decide toda a agenda do dia': 24 * 15, // 15 dias
+    'Ela decide toda a agenda do dia': 24 * 14, // 15 dias
     'Vale de escolha de FILME': 24 * 10, // 10 dias
     'Vale sair sozinha com amiga': 24 * 7, // 7 dias
+    'Ganha 60 dólares na vida real': 24 * 4, // 4 dias
     // redutores (IDs canônicos)
     REDUZIR_BLOQUEIO_6H: 6,
     REDUZIR_BLOQUEIO_12H: 12,
@@ -132,7 +133,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function atualizarSaldo() {
     if (!saldoElement) return;
-    saldoElement.textContent = typeof formatBR === 'function' ? formatBR(saldoDominadora) : (saldoDominadora || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    saldoElement.textContent =
+      typeof formatBR === 'function'
+        ? formatBR(saldoDominadora)
+        : (saldoDominadora || 0).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          });
     localStorage.setItem('saldoDominadora', saldoDominadora);
   }
 
@@ -176,49 +183,191 @@ document.addEventListener('DOMContentLoaded', () => {
       const d = new Date(key + 'T00:00:00');
       const header = document.createElement('div');
       header.style.cssText = 'margin:14px 0 6px; color:#ffd700; font-weight:900; letter-spacing:.5px; border-left:4px solid #8b0000; padding-left:10px; font-size:14px;';
-      header.textContent = d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      header.textContent = d.toLocaleDateString('pt-BR', {
+        weekday: 'short',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      });
       historicoElement.appendChild(header);
 
       byDay[key].forEach((h) => {
         const card = document.createElement('div');
         card.style.cssText = 'background:#121212;border:1px solid #2e2e2e;border-radius:10px;padding:10px 12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.35), inset 0 0 8px rgba(184,134,11,.06)';
+
         const isGanho = h.tipo === 'ganho';
+
         const valorHTML = `<strong style="min-width:120px;display:inline-block;text-align:right;color:${isGanho ? '#0fdc81' : '#ff6a5f'}">${
           typeof formatBR === 'function' ? formatBR(h.valor) : 'R$ ' + (h.valor || 0).toLocaleString('pt-BR')
         }</strong>`;
+
         const badge = `<span style="font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;border:1px solid ${isGanho ? 'rgba(15,220,129,.6)' : 'rgba(255,106,95,.6)'};background:${
           isGanho ? 'rgba(15,220,129,.1)' : 'rgba(255,106,95,.08)'
-        };color:${isGanho ? '#0fdc81' : '#ff6a5f'};text-transform:uppercase;letter-spacing:.5px;margin-right:10px">${isGanho ? 'Ganho' : 'Gasto'}</span>`;
-        const hora = new Date(h.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        };color:${isGanho ? '#0fdc81' : '#ff6a5f'};text-transform:uppercase;letter-spacing:.5px;margin-right:10px">
+        ${isGanho ? 'Ganho' : 'Gasto'}
+      </span>`;
 
+        const hora = new Date(h.timestamp).toLocaleTimeString('pt-BR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        // Cabeçalho do card + botão apagar
         card.innerHTML = `
-          <div style="display:flex;align-items:center;gap:10px">
-            ${badge}
-            <div style="flex:1;color:#ddd">${h.descricao}</div>
-            ${valorHTML}
-          </div>
-          <div style="margin-top:4px;display:flex;justify-content:space-between;color:#8d8d8d;font-size:12px">
-            <span>${hora}</span>
-            <span>Saldo: ${typeof formatBR === 'function' ? formatBR(h.saldoAtual) : 'R$ ' + (h.saldoAtual || 0).toLocaleString('pt-BR')}</span>
-          </div>
-        `;
+        <div style="display:flex;align-items:center;gap:10px">
+          ${badge}
+          <div style="flex:1;color:#ddd">${h.descricao}</div>
+          ${valorHTML}
+          <button class="btn-del-hist" title="Apagar este registro" onclick="deletarItemHistorico('${h.timestamp}')">🗑</button>
+        </div>
+        <div style="margin-top:4px;display:flex;justify-content:space-between;color:#8d8d8d;font-size:12px">
+          <span>${hora}</span>
+          <span>Saldo: ${typeof formatBR === 'function' ? formatBR(h.saldoAtual) : 'R$ ' + (h.saldoAtual || 0).toLocaleString('pt-BR')}</span>
+        </div>
+      `;
+
+        // Linha bonitinha de bônus / desconto (se tiver dados)
+        if (typeof h.valorOriginal === 'number' && typeof h.valorFinal === 'number' && typeof h.diferenca === 'number' && typeof h.percentual === 'number') {
+          const perc = Math.round(h.percentual || 0);
+          const isBonusGanho = perc > 0;
+          const isDesconto = perc < 0;
+          const isNeutro = perc === 0;
+
+          const isGanhoLocal = h.tipo === 'ganho';
+
+          const percAbs = Math.abs(perc);
+          const difAbs = Math.abs(h.diferenca);
+
+          const chipBg = isBonusGanho ? 'rgba(15,220,129,.12)' : isDesconto ? 'rgba(255,106,95,.12)' : 'rgba(255,215,0,.16)'; // 0% -> amarelinho
+          const chipBorder = isBonusGanho ? 'rgba(15,220,129,.6)' : isDesconto ? 'rgba(255,106,95,.6)' : 'rgba(255,215,0,.8)';
+          const chipText = isBonusGanho ? '#0fdc81' : isDesconto ? '#ff6a5f' : '#ffd700';
+
+          const valorOriginalFmt = Math.abs(h.valorOriginal).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          });
+          const valorFinalFmt = Math.abs(h.valorFinal).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          });
+          const difFmt = difAbs.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          });
+
+          // Para o caso 0%, calculamos o "poderia ter sido 15%"
+          const potencial = Math.round(Math.abs(h.valorOriginal) * 0.15 * 100) / 100;
+          const potencialFmt = potencial.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          });
+
+          let detalhesHtml = '';
+
+          if (isNeutro) {
+            const verbo = isGanhoLocal ? 'ganhar' : 'economizar';
+            const tipoTexto = isGanhoLocal ? 'em bônus' : 'em desconto';
+
+            detalhesHtml = `
+      <span style="flex:1;">
+        <span style="opacity:.8;">Sem bônus aplicado:</span>
+        <span style="margin-left:4px;font-weight:800;color:#ffde7a;">
+          ${valorFinalFmt}
+        </span>
+        <br>
+        <span style="opacity:.75;color:#ffde7a;">
+          Você deixou de ${verbo} ${potencialFmt} ${tipoTexto} (15%).
+        </span>
+      </span>
+    `;
+          } else {
+            const labelPrefix = isBonusGanho ? 'Bônus:' : 'Desconto:';
+            const ajusteLabel = isBonusGanho ? 'ajuste de' : 'economia de';
+
+            detalhesHtml = `
+      <span style="flex:1;">
+        <span style="opacity:.8;">${labelPrefix}</span>
+        <span style="margin-left:4px;text-decoration:line-through;opacity:.6;">
+          ${valorOriginalFmt}
+        </span>
+        <span style="margin-left:4px;font-weight:800;color:${isBonusGanho ? '#0fdc81' : '#ff6a5f'};">
+          ${valorFinalFmt}
+        </span>
+        <span style="opacity:.75;margin-left:4px;">
+          (${ajusteLabel} ${difFmt})
+        </span>
+      </span>
+    `;
+          }
+
+          const bonusDiv = document.createElement('div');
+          bonusDiv.style.cssText = 'margin-top:6px;font-size:12px;color:#c9c9c9;padding-left:14px;border-left:2px solid rgba(255,215,0,.4);display:flex;align-items:center;gap:10px;';
+
+          const percLabel = perc > 0 ? `+${percAbs}%` : perc < 0 ? `-${percAbs}%` : '0%';
+
+          bonusDiv.innerHTML = `
+    <span style="padding:2px 10px;border-radius:999px;border:1px solid ${chipBorder};background:${chipBg};color:${chipText};font-weight:700;">
+      ${percLabel} Bônus lingerie
+    </span>
+    ${detalhesHtml}
+  `;
+
+          card.appendChild(bonusDiv);
+        }
+
         historicoElement.appendChild(card);
       });
     }
   }
 
-  function adicionarHistorico(descricao, valor, tipo) {
+  function adicionarHistorico(descricao, valor, tipo, detalhesBonus = null) {
     const timestamp = new Date().toISOString();
-    historico.unshift({
+
+    const entry = {
       descricao,
       valor,
       tipo,
       saldoAtual: saldoDominadora,
       timestamp,
-    });
+    };
+
+    if (detalhesBonus) {
+      entry.valorOriginal = detalhesBonus.valorOriginal;
+      entry.valorFinal = detalhesBonus.valorFinal;
+      entry.diferenca = detalhesBonus.diferenca;
+      entry.percentual = detalhesBonus.percentual;
+    }
+
+    historico.unshift(entry);
     localStorage.setItem('historico', JSON.stringify(historico));
     renderHistorico();
   }
+
+  window.deletarItemHistorico = function (timestamp) {
+    const idx = historico.findIndex((h) => h.timestamp === timestamp);
+    if (idx === -1) return;
+
+    const item = historico[idx];
+
+    if (!confirm('Apagar este registro do histórico e ajustar o saldo?')) return;
+
+    // Reverte o efeito no saldo
+    if (item.tipo === 'gasto') {
+      saldoDominadora += item.valor;
+    } else if (item.tipo === 'ganho') {
+      saldoDominadora -= item.valor;
+    }
+
+    // Remove do array
+    historico.splice(idx, 1);
+
+    // Persiste tudo
+    localStorage.setItem('historico', JSON.stringify(historico));
+    localStorage.setItem('saldoDominadora', saldoDominadora);
+
+    atualizarSaldo();
+    renderHistorico();
+  };
 
   // -----------------------------
   // TAREFAS LIMITADAS (bloqueios)
@@ -835,12 +984,21 @@ document.addEventListener('DOMContentLoaded', () => {
           const d = new Date(h.timestamp);
           const quando = d.toLocaleString('pt-BR');
           const tipo = h.tipo === 'gasto' ? 'Gasto' : 'Ganho';
-          const val = (h.valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          const val = (h.valor || 0).toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          });
           return `${idx + 1}. [${quando}] ${tipo}: ${h.descricao} — ${val}`;
         });
         const total = filtered.reduce((acc, h) => acc + (h.tipo === 'gasto' ? -h.valor : h.valor), 0);
-        const totalFmt = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const saldoFmt = (typeof saldoDominadora !== 'undefined' ? saldoDominadora : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const totalFmt = total.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        });
+        const saldoFmt = (typeof saldoDominadora !== 'undefined' ? saldoDominadora : 0).toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        });
         const mensagem = `${titulo}\n\n${linhas.join('\n')}\n\n— Total líquido no período: *${totalFmt}*\n— Saldo atual: *${saldoFmt}*`;
         const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
         window.open(urlWhatsApp, '_blank');
@@ -910,7 +1068,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const agora2 = Date.now();
             const cdMs = getBloqueioMsPorTarefa('ACELERAR_GLOBAL_4D_1H');
             if (cdMs > 0) {
-              tarefasBloqueadas.push({ nome: 'ACELERAR_GLOBAL_4D_1H', expiraEm: agora2 + cdMs });
+              tarefasBloqueadas.push({
+                nome: 'ACELERAR_GLOBAL_4D_1H',
+                expiraEm: agora2 + cdMs,
+              });
               localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
               atualizarTarefasLimitadasUI();
               atualizarBloqueiosNoSelectTarefa();
@@ -946,7 +1107,10 @@ document.addEventListener('DOMContentLoaded', () => {
           startTimedReducer(redutorId, horasReducao, duracaoMs);
 
           if (cooldownMs > 0) {
-            tarefasBloqueadas.push({ nome: redutorId, expiraEm: agora + cooldownMs });
+            tarefasBloqueadas.push({
+              nome: redutorId,
+              expiraEm: agora + cooldownMs,
+            });
             localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
           }
 
@@ -974,8 +1138,42 @@ document.addEventListener('DOMContentLoaded', () => {
           atualizarBloqueiosNoSelectTarefa();
         }
 
-        saldoDominadora -= valor;
-        adicionarHistorico(tarefa, valor, 'gasto');
+        // 🔥 DESCONTO DE LINGERIE EM COMPRA
+        const usaBonus = !!window.bonusEspecialAtivo;
+
+        // Valor que veio do select (pode já estar com o bônus aplicado)
+        let valorBruto = valor;
+
+        // Tenta recuperar o valor original (sem desconto) a partir do texto da opção
+        let valorOriginal = valorBruto;
+        if (usaBonus && optSel && optSel.textContent) {
+          const match = optSel.textContent.match(/R\$\s*([\d\.,]+)/);
+          if (match) {
+            const numerico = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
+            if (!Number.isNaN(numerico) && numerico > 0) {
+              valorOriginal = numerico;
+            }
+          }
+        }
+
+        let percentual = 0;
+        let valorFinal = valorBruto;
+        let diferenca = 0;
+
+        if (usaBonus) {
+          percentual = -15;
+          valorFinal = Math.round(valorOriginal * 0.85 * 100) / 100;
+          diferenca = valorFinal - valorOriginal;
+        }
+
+        saldoDominadora -= valorFinal;
+
+        adicionarHistorico(tarefa, valorFinal, 'gasto', {
+          valorOriginal,
+          valorFinal,
+          diferenca,
+          percentual,
+        });
 
         const novaTarefa = {
           id: Date.now(),
@@ -1001,7 +1199,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const dataHora = typeof formatDate === 'function' ? formatDate(ultimo.timestamp) : new Date(ultimo.timestamp).toLocaleString('pt-BR');
           const mensagem = `\n🧾 *RECIBO DE COMPRA* 🧾\n----------------------------------------\n🗓 *Data/Hora:* ${dataHora}\n📌 *Tarefa:* ${tarefa}\n📝 *Descrição:* ${descricao}\n----------------------------------------\n💰 *Valor:* R$ ${valor.toLocaleString(
             'pt-BR'
-          )}\n👑 *Saldo Atual:* R$ ${saldoDominadora.toLocaleString('pt-BR')}\n----------------------------------------\n✅ Ganhe saldo e compre serviços sem moderação! 🙏\n`;
+          )}\n👑 *Saldo Atual:* ${saldoDominadora.toLocaleString('pt-BR')}\n----------------------------------------\n✅ Ganhe saldo e compre serviços sem moderação! 🙏\n`;
           const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
           window.open(urlWhatsApp, '_blank');
         } catch {}
@@ -1014,11 +1212,46 @@ document.addEventListener('DOMContentLoaded', () => {
         valor = parseInt(valorInput);
         tarefa = ganhoSelecionado;
 
-        const multBonus = typeof getBonusEspecialMultiplier === 'function' ? getBonusEspecialMultiplier() : 1;
-        valor = Math.round(valor * multBonus * 100) / 100;
+        // 🔥 Extra: detalhar "Pés na cara" com os checkboxes marcados
+        try {
+          if (ganhoSelecionado && ganhoSelecionado.includes('Pés na cara')) {
+            const extras = [];
 
-        saldoDominadora += valor;
-        adicionarHistorico(tarefa, valor, 'ganho');
+            const chkChule = document.getElementById('chkChule');
+            const chkFrancesinha = document.getElementById('chkFrancesinha');
+
+            if (chkChule && chkChule.checked) {
+              extras.push('pés com chulé');
+            }
+            if (chkFrancesinha && chkFrancesinha.checked) {
+              extras.push('francesinha');
+            }
+
+            if (extras.length) {
+              tarefa = `${ganhoSelecionado} — ${extras.join(' + ')}`;
+            }
+          }
+        } catch (e) {
+          console.warn('Falha ao montar descrição detalhada de Pés na cara:', e);
+        }
+
+        const multBonus = typeof getBonusEspecialMultiplier === 'function' ? getBonusEspecialMultiplier() : 1;
+
+        const valorOriginal = valor;
+        const valorFinal = Math.round(valorOriginal * multBonus * 100) / 100;
+        const diferenca = valorFinal - valorOriginal;
+
+        const percentualRaw = (multBonus - 1) * 100;
+        const percentual = Math.round(percentualRaw);
+
+        saldoDominadora += valorFinal;
+
+        adicionarHistorico(tarefa, valorFinal, 'ganho', {
+          valorOriginal,
+          valorFinal,
+          diferenca,
+          percentual,
+        });
 
         if (selectGanhoSelect) selectGanhoSelect.value = '';
         if (valorGanhoInput) valorGanhoInput.value = '0';
@@ -1103,14 +1336,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const vpm = parseFloat(valorPorMinutoInput.value) || 0;
         if (vpm <= 0) return alert('Insira um valor válido por minuto antes de terminar.');
 
-        const valorTotal = typeof calcularValorTotal === 'function' ? calcularValorTotal(tempoSegundos, vpm) : Math.round((tempoSegundos / 60) * vpm);
+        let valorTotal = typeof calcularValorTotal === 'function' ? calcularValorTotal(tempoSegundos, vpm) : (tempoSegundos / 60) * vpm;
 
         const multBonus = typeof getBonusEspecialMultiplier === 'function' ? getBonusEspecialMultiplier() : 1;
-        const valorCredito = Math.round(valorTotal * multBonus);
+
+        const valorCredito = Math.round(valorTotal * multBonus * 100) / 100;
 
         if (valorCredito > 0) {
           saldoDominadora += valorCredito;
-          adicionarHistorico(`Ganho por tempo (${tempoDisplay.textContent})`, valorCredito, 'ganho');
+          adicionarHistorico(`Ganho por tempo (${tempoDisplay.textContent})`, valorCredito, 'ganho', {
+            valorOriginal: valorTotal,
+            valorFinal: valorCredito,
+            diferenca: valorCredito - valorTotal,
+            percentual: Math.round((multBonus - 1) * 100),
+          });
           atualizarSaldo();
         }
 

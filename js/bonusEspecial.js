@@ -90,24 +90,40 @@
     } catch (e) {}
   }
 
+  let bonusSelectDecoratedState = null;
+
   // ----------------- Decorar opções do select "Como ganhou" -----------------
   function decorateSelectGanhoForBonus() {
     try {
-      var sel = document.getElementById('selectGanho');
+      const sel = document.getElementById('selectGanho');
       if (!sel) return;
-      var active = !!window.bonusEspecialAtivo;
 
-      Array.prototype.forEach.call(sel.options, function (opt) {
-        if (!opt.dataset.originalText) opt.dataset.originalText = opt.textContent || '';
+      const active = !!window.bonusEspecialAtivo;
+
+      // se o estado (ligado/desligado) não mudou, não faz nada
+      if (bonusSelectDecoratedState === active) {
+        return;
+      }
+      bonusSelectDecoratedState = active;
+
+      Array.prototype.forEach.call(sel.options, (opt) => {
+        if (!opt.dataset.originalText) {
+          opt.dataset.originalText = opt.textContent || '';
+        }
+
         if (active) {
-          if (opt.textContent.indexOf('⚡') === -1) {
+          // adiciona o (⚡) uma vez
+          if (!opt.textContent.includes('⚡')) {
             opt.textContent = opt.dataset.originalText + ' (⚡)';
           }
         } else {
+          // volta pro texto original
           opt.textContent = opt.dataset.originalText;
         }
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error('decorateSelectGanhoForBonus error:', e);
+    }
   }
 
   // ----------------- Faixa embaixo explicando o bônus -----------------
