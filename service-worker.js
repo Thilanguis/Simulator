@@ -1,12 +1,15 @@
 // sw.js
 // IMPORTANTE: Mude para a próxima versão (ex: v26)
-const CACHE_NAME = 'simulador-cache-20';
+const CACHE_NAME = 'simulador-cache-21';
 const urlsToCache = [
   '.',
   'index.html', // --- CSS ---
   'css/app.css', // CORRIGIDO
+  'css/registro.css',
   'css/bonusAtivoGPT.css', // CORRIGIDO // --- JAVASCRIPT ---
   'js/storage.js', // CORRIGIDO
+  'js/economia.js',
+  'js/registro.js',
   'js/utils.js', // CORRIGIDO
   'js/bonusEspecial.js', // CORRIGIDO
   'js/ganhoFixo.js', // CORRIGIDO
