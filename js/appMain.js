@@ -1051,7 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // ⚡ Aceleração Global
         if (/ACELERAR_GLOBAL_4D_1H/.test((selectTarefaSelect && selectTarefaSelect.value) || '')) {
-          const custo = 18000;
+          const custo = valor;
           if (saldoDominadora < custo) return alert('Saldo insuficiente!');
 
           const REDUZ_TOTAL_MS = 4 * 24 * 60 * 60 * 1000; // 4 dias
