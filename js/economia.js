@@ -64,7 +64,7 @@
     seletor.addEventListener('change', () => {
       const novo = Number(seletor.value);
       if (!ALLOWED.includes(novo)) return;
-      if (window.timerEmSessao) {
+      if (typeof timerEmSessao !== 'undefined' && timerEmSessao) {
         alert('Finalize o cronômetro antes de trocar a escala.');
         seletor.value = String(factor);
         return;
