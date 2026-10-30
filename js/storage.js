@@ -2,40 +2,17 @@
 /* CONFIG & STATE                             */
 /* =================================================================== */
 
-const FIXED_VALUES_GANHO = {
-  'Pés na cara': 400,
-  'Tapa de pé na cara': 2,
-  'Chupar peito': 500,
-  'Cuspir na cara': 320,
-  'Mijar na boca': 350,
-  'Dedo do meio com desprezo': 30,
-  'Vestir cinta e comer dominado': 3500,
-  'Dar uma meleca para comer': 200,
-  'Comer cutícula e peles dos pés': 800,
-  'Cuspir porra (Sêmen) na boca': 2000,
-  'Chupar buceta': 200,
-  'Peidar na cara': 150,
-};
+const ELIGIBLE_TASKS = new Set(Economy.config.eligible);
 
-// const BONUS_ESPECIAL_MULTIPLIER = 0.85; // 1.3x
+// Carrega o estado do AppStorage
+let saldoDominadora = parseFloat(AppStorage.getItem('saldoDominadora') || '0');
 
-/* BÔNUS em GANHOS (+30%) */
-const BONUS_GANHO_MULTIPLIER = 1.15;
-
-/* DESCONTO em COMPRAS (-15%) — use só se quiser mesmo aplicar desconto nos gastos */
-const DESCONTO_COMPRA_MULTIPLIER = 0.85;
-
-const ELIGIBLE_TASKS = new Set(['Videogames Competitivos', 'Perfil', 'Jogos de tabuleiro com amigas', 'Buraco']);
-
-// Carrega o estado do localStorage
-let saldoDominadora = parseFloat(localStorage.getItem('saldoDominadora') || '0');
-
-let historico = JSON.parse(localStorage.getItem('historico') || '[]');
+let historico = JSON.parse(AppStorage.getItem('historico') || '[]');
 // Array para tarefas pendentes, persistente
-let tarefasPendentes = JSON.parse(localStorage.getItem('tarefasPendentes') || '[]');
-// carrega do localStorage se já estava ativo
-let bonusEspecialAtivo = JSON.parse(localStorage.getItem('bonusEspecialAtivo') || 'false');
+let tarefasPendentes = JSON.parse(AppStorage.getItem('tarefasPendentes') || '[]');
+// carrega do AppStorage se já estava ativo
+window.bonusEspecialAtivo = JSON.parse(AppStorage.getItem('bonusEspecialAtivo') || 'false');
 
 // garantir que todos os registros antigos ganhem timestamp (se não tiverem)
 historico = historico.map((h) => (h.timestamp ? h : Object.assign({}, h, { timestamp: new Date().toISOString() })));
-localStorage.setItem('historico', JSON.stringify(historico));
+AppStorage.setItem('historico', JSON.stringify(historico));

@@ -1,0 +1,2 @@
+# The original scripts use CRLF. Preserve their reviewable diffs and accept CR at EOL.
+* whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

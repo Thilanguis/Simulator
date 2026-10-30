@@ -1,59 +1,19 @@
-/* =================================================================== */
-/* LÓGICA DE GANHO FIXO                         */
-/* =================================================================== */
-
 function calcularValorGanho() {
-  const selectGanho = document.getElementById('selectGanho');
-  const valorGanhoInput = document.getElementById('valorGanho');
-  const pesNaCaraOptions = document.getElementById('pesNaCaraOptions');
-  const comCatarro = document.getElementById('comCatarro');
-  const quantidadeInput = document.getElementById('quantidadeMultiplicador');
-  const labelQuantidade = document.getElementById('labelQuantidadeMultiplicador');
-  const valorSelecionado = selectGanho.value;
-
-  // esconder opções por padrão
-  pesNaCaraOptions.style.display = 'none';
-  quantidadeInput.style.display = 'none';
-  labelQuantidade.style.display = 'none';
-  comCatarro.style.display = 'none';
-  valorGanhoInput.readOnly = false;
-  // reset do campo valor para evitar confusões
-  valorGanhoInput.value = '';
-
-  if (FIXED_VALUES_GANHO[valorSelecionado]) {
-    valorGanhoInput.readOnly = true;
-    let valorBase = FIXED_VALUES_GANHO[valorSelecionado];
-
-    // Pés na cara tem checkboxes extras
-    if (valorSelecionado === 'Pés na cara') {
-      pesNaCaraOptions.style.display = 'block';
-      if (document.getElementById('chkChule').checked) valorBase += parseInt(document.getElementById('chkChule').dataset.value);
-      if (document.getElementById('chkFrancesinha').checked) valorBase += parseInt(document.getElementById('chkFrancesinha').dataset.value);
-      valorGanhoInput.value = valorBase;
-      return;
-    }
-
-    // Tapa de pé na cara: mostrar multiplicador de quantidade
-    if (valorSelecionado === 'Tapa de pé na cara') {
-      quantidadeInput.style.display = 'block';
-      labelQuantidade.style.display = 'block';
-      // garantir pelo menos 1
-      let quantidade = parseInt(quantidadeInput.value) || 1;
-      if (quantidade < 1) quantidade = 1;
-      quantidadeInput.value = quantidade;
-      // multiplicar valor base pelo número escolhido
-      valorGanhoInput.value = valorBase * quantidade;
-      return;
-    }
-
-    if (valorSelecionado === 'Cuspir na cara') {
-      comCatarro.style.display = 'block';
-      if (document.getElementById('chkCatarro').checked) valorBase += parseInt(document.getElementById('chkChule').dataset.value);
-      valorGanhoInput.value = valorBase;
-      return;
-    }
-
-    // casos fixos simples
-    valorGanhoInput.value = valorBase;
-  }
+  const selected = document.getElementById('selectGanho').value;
+  const input = document.getElementById('valorGanho');
+  const settings = getEconomy();
+  const fixed = settings.gains[selected] !== undefined;
+  const quantity = document.getElementById('quantidadeMultiplicador');
+  const multiplicative = selected === Economy.config.gains[1].id;
+  document.getElementById('pesNaCaraOptions').style.display = selected === Economy.config.gains[0].id ? 'block' : 'none';
+  document.getElementById('comCatarro').style.display = selected === Economy.config.gains[3].id ? 'block' : 'none';
+  quantity.style.display = multiplicative ? 'block' : 'none';
+  document.getElementById('labelQuantidadeMultiplicador').style.display = multiplicative ? 'block' : 'none';
+  quantity.value = Math.min(settings.quantityMax, Math.max(1, parseInt(quantity.value) || 1));
+  const extras = [];
+  if (selected === Economy.config.gains[0].id) for (const id of ['chkChule', 'chkFrancesinha']) if (document.getElementById(id).checked) extras.push(id);
+  if (selected === Economy.config.gains[3].id && document.getElementById('chkCatarro').checked) extras.push('chkCatarro');
+  input.readOnly = fixed;
+  input.max = settings.manualGainMax;
+  input.value = selected === 'Outro' ? '' : Economy.gain(settings, selected, quantity.value, extras) || '';
 }

@@ -1,152 +1,97 @@
-/* =================================================================== */
-/* CONTADOR DE TEMPO                           */
-/* =================================================================== */
-
-// CONTADOR DE TEMPO
-let tempoSegundos = 0;
-let timerInterval = null;
-let wakeLock = null;
-
-let timerEmSessao = false;
-let contadorTarefasTimer = 0;
-let somaIncrementosValorSessao = 0;
-let baseMultiplicadorSessao = 1;
-
-let sessionHasEligibleTask = false;
-
-function ensureToastContainer() {
-  let c = document.getElementById('toastContainer');
-  if (!c) {
-    c = document.createElement('div');
-    c.id = 'toastContainer';
-    document.body.appendChild(c);
+/* Active time is integrated at its earned rate. Restored sessions are paused. */
+let tempoSegundos = 0,
+  timerInterval = null,
+  wakeLock = null,
+  timerEmSessao = false;
+let contadorTarefasTimer = 0,
+  somaIncrementosValorSessao = 0,
+  baseMultiplicadorSessao = 1,
+  sessionHasEligibleTask = false;
+let timerEarnedUnits = 0,
+  timerLastTick = 0;
+function persistTimer() {
+  AppStorage.setItem(
+    'timerSession',
+    JSON.stringify({ seconds: tempoSegundos, earnedUnits: timerEarnedUnits, rate: Number(document.getElementById('valorPorMinuto').value), active: timerEmSessao, tasks: contadorTarefasTimer, eligible: sessionHasEligibleTask }),
+  );
+}
+function syncTimer() {
+  if (!timerInterval || !timerLastTick) return;
+  const seconds = Math.max(0, Math.floor((Date.now() - timerLastTick) / 1000));
+  if (!seconds) return;
+  const state = Economy.step({ seconds: tempoSegundos, earnedUnits: timerEarnedUnits, rate: Number(document.getElementById('valorPorMinuto').value) }, seconds, getEconomy(), sessionHasEligibleTask);
+  tempoSegundos = state.seconds;
+  timerEarnedUnits = state.earnedUnits;
+  document.getElementById('valorPorMinuto').value = state.rate.toFixed(2);
+  timerLastTick += seconds * 1000;
+  if (tempoSegundos >= Math.floor(getEconomy().timer.maxMinutes * 60)) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    releaseWakeLock();
+    document.getElementById('btnPlayPauseTempo').textContent = 'Limite atingido · calcular';
   }
-  return c;
+  persistTimer();
 }
-
-function showMultiplicadorToast({ atual, novo, incrementoValor, incrementoTarefas, repeticaoTotal, valorTarefa, tarefaIndex, totalValorSessao }) {
-  try {
-    const c = ensureToastContainer();
-    const t = document.createElement('div');
-    t.className = 'toast';
-    t.style.position = 'relative';
-
-    const format2 = (n) => (Number(n) || 0).toFixed(2);
-    const valorStr = (valorTarefa ?? 0).toLocaleString ? valorTarefa.toLocaleString('pt-BR') : String(valorTarefa);
-
-    t.innerHTML = `
-      <button class="close" aria-label="Fechar">×</button>
-      <div class="title"><span class="dot"></span>⏱️ Multiplicador atualizado</div>
-      <div class="line"><span class="strong">${format2(atual)}</span> → <span class="strong">${format2(novo)}</span></div>
-      <div class="line">+ <span class="strong">${format2(incrementoValor)}</span> pelo valor da tarefa (R$ ${valorStr})</div>
-      <div class="line">+ <span class="strong">${format2(incrementoTarefas)}</span> pela repetição (tarefa #${tarefaIndex}) <span class="meta">(total: +${format2(repeticaoTotal)})</span></div>
-      <div class="line meta">Total da sessão: +<span class="strong">${format2(incrementoTarefas + incrementoValor)}</span></div>
-    `;
-
-    c.appendChild(t);
-
-    t.querySelector('.close').addEventListener('click', () => {
-      t.remove();
-    });
-
-    const ttl = 9000;
-    const start = performance.now();
-    function step(now) {
-      const p = Math.min(1, (now - start) / ttl);
-      if (p < 1) requestAnimationFrame(step);
-      else t.remove();
-    }
-    requestAnimationFrame(step);
-  } catch (e) {}
-}
-
-function incrementoPorValorDaTarefa(v) {
-  if (!v || v <= 0) return 0;
-  if (v >= 10000) return 6.3;
-  if (v >= 9000) return 5.3;
-  if (v >= 8000) return 4.8;
-  if (v >= 7000) return 4.3;
-  if (v >= 6000) return 3.8;
-  if (v >= 5000) return 3.1;
-  if (v >= 4000) return 2.6;
-  if (v >= 3500) return 2.3;
-  if (v >= 3000) return 2.1;
-  if (v >= 2500) return 1.8;
-  if (v >= 2000) return 1.5;
-  if (v >= 1500) return 1.3;
-  if (v >= 1100) return 1.1;
-  if (v >= 800) return 0.8;
-  if (v >= 400) return 0.6;
-  return 0.4;
-}
-
-function aplicarBonusDeTarefaDuranteTimer(valorTarefa, tarefaName) {
+function aplicarBonusDeTarefaDuranteTimer(value, name) {
   if (!timerEmSessao) return;
-
-  if (typeof tarefaName === 'string' && ELIGIBLE_TASKS.has(tarefaName.trim())) {
-    sessionHasEligibleTask = true;
-  }
-
-  contadorTarefasTimer += 1;
-  const incValorAtual = incrementoPorValorDaTarefa(valorTarefa);
-  somaIncrementosValorSessao += incValorAtual;
-
-  const bonusRepeticaoDaVez = 0.13 * contadorTarefasTimer;
-  const bonusRepeticaoTotal = ((contadorTarefasTimer * (contadorTarefasTimer + 1)) / 2) * 0.13;
-
-  const valorPorMinutoInput = document.getElementById('valorPorMinuto');
-  const atual = parseFloat(valorPorMinutoInput.value) || baseMultiplicadorSessao;
-  const novo = atual + incValorAtual + bonusRepeticaoDaVez;
-
-  valorPorMinutoInput.value = novo.toFixed(2);
+  syncTimer();
+  if (ELIGIBLE_TASKS.has(String(name).trim())) sessionHasEligibleTask = true;
+  contadorTarefasTimer++;
+  const settings = getEconomy();
+  const classic = Economy.config.services.find((s) => s.id === name)?.classic || Economy.config.gains.find((s) => s.id === name)?.classic || value;
+  const increment = Economy.taskIncrement(classic, settings) + settings.timer.repeatIncrement * contadorTarefasTimer;
+  const input = document.getElementById('valorPorMinuto');
+  input.value = Math.min(settings.timer.maxRate, Economy.round(Number(input.value) + increment)).toFixed(2);
+  persistTimer();
   atualizarValorAcumulado();
-
-  showMultiplicadorToast({
-    atual,
-    novo,
-    incrementoValor: incValorAtual,
-    incrementoTarefas: bonusRepeticaoDaVez,
-    repeticaoTotal: bonusRepeticaoTotal,
-    valorTarefa,
-    tarefaIndex: contadorTarefasTimer,
-    totalValorSessao: somaIncrementosValorSessao,
-  });
 }
-
-function calcularValorTotal(segundos, valorPorMinuto) {
-  if (segundos === 0 || valorPorMinuto === 0) return 0;
-  return Math.round(segundos * (valorPorMinuto / 60));
+function calcularValorTotal(seconds, rate) {
+  return Economy.round((seconds * rate) / 60);
 }
-
 function atualizarValorAcumulado() {
-  const valorPorMinuto = parseFloat(document.getElementById('valorPorMinuto').value) || 0;
-  const valorTotal = calcularValorTotal(tempoSegundos, valorPorMinuto);
-  document.getElementById('valorAcumuladoDisplay').textContent = formatBR(valorTotal);
+  document.getElementById('valorAcumuladoDisplay').textContent = formatBR(Economy.round(timerEarnedUnits / 6000));
 }
-
-const requestWakeLock = async () => {
-  if ('wakeLock' in navigator) {
+async function requestWakeLock() {
+  if ('wakeLock' in navigator)
     try {
       wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => {
-        wakeLock = null;
-      });
-    } catch (err) {
-      console.error(`Erro ao solicitar Wake Lock: ${err.name}, ${err.message}`);
-    }
-  }
-};
-
-const releaseWakeLock = async () => {
+    } catch {}
+}
+async function releaseWakeLock() {
   if (wakeLock) {
-    await wakeLock.release();
+    try {
+      await wakeLock.release();
+    } catch {}
     wakeLock = null;
   }
-};
-
+}
 function atualizarDisplay() {
-  const min = String(Math.floor(tempoSegundos / 60)).padStart(2, '0');
-  const sec = String(tempoSegundos % 60).padStart(2, '0');
-  document.getElementById('tempoDisplay').textContent = `${min}:${sec}`;
+  const min = String(Math.floor(tempoSegundos / 60)).padStart(2, '0'),
+    sec = String(tempoSegundos % 60).padStart(2, '0');
+  document.getElementById('tempoDisplay').textContent = min + ':' + sec;
   atualizarValorAcumulado();
 }
+document.addEventListener('DOMContentLoaded', () => {
+  const raw = AppStorage.getItem('timerSession');
+  if (!raw) return;
+  try {
+    const saved = JSON.parse(raw);
+    if (!saved.active) return;
+    if (![saved.seconds, saved.earnedUnits, saved.rate, saved.tasks].every((n) => Number.isFinite(n) && n >= 0)) throw new Error('Sessão inválida.');
+    tempoSegundos = saved.seconds;
+    timerEarnedUnits = saved.earnedUnits;
+    contadorTarefasTimer = saved.tasks;
+    sessionHasEligibleTask = saved.eligible;
+    timerEmSessao = true;
+    document.getElementById('valorPorMinuto').value = saved.rate;
+    document.getElementById('btnPlayPauseTempo').textContent = '▶️ Retomar sessão salva';
+    atualizarDisplay();
+  } catch (error) {
+    storageFailure(error);
+  }
+});
+window.addEventListener('pagehide', () => {
+  syncTimer();
+  persistTimer();
+  AppStorage.flush();
+});

@@ -4,7 +4,7 @@
 // Também controla o estado global de bônus de GANHO (+15%) e chama updateBonusEspecialUI.
 
 (function () {
-  var DEFAULT_MULT = 1.15; // +15%
+  var DEFAULT_MULT = 1 + getEconomy().bonusPercent / 100; // +15%
 
   // Se já existir uma constante global, respeita; senão assume 1.15
   if (typeof window.BONUS_ESPECIAL_MULTIPLIER !== 'number') {
@@ -16,7 +16,7 @@
   // Estado inicial do checkbox (carregado do storage)
   if (typeof window.bonusEspecialAtivo === 'undefined') {
     try {
-      window.bonusEspecialAtivo = !!JSON.parse(localStorage.getItem(BONUS_KEY) || 'false');
+      window.bonusEspecialAtivo = !!JSON.parse(AppStorage.getItem(BONUS_KEY) || 'false');
     } catch (e) {
       window.bonusEspecialAtivo = false;
     }
@@ -94,7 +94,7 @@
   function applyBonusStateToUI(checkbox) {
     window.bonusEspecialAtivo = !!(checkbox && checkbox.checked);
     try {
-      localStorage.setItem(BONUS_KEY, JSON.stringify(window.bonusEspecialAtivo));
+      AppStorage.setItem(BONUS_KEY, JSON.stringify(window.bonusEspecialAtivo));
     } catch (e) {}
 
     if (typeof window.updateBonusEspecialUI === 'function') {

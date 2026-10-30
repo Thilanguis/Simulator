@@ -1,0 +1,33 @@
+name: Validate wallet
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run simulate
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: wallet-validation
+          path: |
+            docs/ECONOMIA.md
+            test-results/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wallet-static-site
+          path: dist/

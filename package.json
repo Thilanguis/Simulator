@@ -1,0 +1,22 @@
+{
+  "name": "findom-wallet",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "test:e2e": "playwright test",
+    "simulate": "node scripts/simulate.cjs",
+    "build": "node scripts/build.cjs",
+    "start": "node scripts/serve.cjs"
+  },
+  "dependencies": {
+    "@tesseract.js-data/eng": "1.0.0",
+    "@tesseract.js-data/por": "1.0.0",
+    "pdfjs-dist": "6.4.299",
+    "tesseract.js": "7.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "prettier": "3.9.10"
+  }
+}

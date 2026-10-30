@@ -1,55 +1,47 @@
-// sw.js
-// IMPORTANTE: Mude para a próxima versão (ex: v26)
-const CACHE_NAME = 'simulador-cache-20';
-const urlsToCache = [
-  '.',
-  'index.html', // --- CSS ---
-  'css/app.css', // CORRIGIDO
-  'css/bonusAtivoGPT.css', // CORRIGIDO // --- JAVASCRIPT ---
-  'js/storage.js', // CORRIGIDO
-  'js/utils.js', // CORRIGIDO
-  'js/bonusEspecial.js', // CORRIGIDO
-  'js/ganhoFixo.js', // CORRIGIDO
-  'js/tarefasPendentes.js', // CORRIGIDO
-  'js/appMain.js', // CORRIGIDO
-  'js/app.js', // CORRIGIDO (se for usado)
-  'js/efeitoBonusAtivo.js', // CORRIGIDO
-  'js/splashAmimacao.js', // CORRIGIDO
-  'js/chovendoGrana.js', // CORRIGIDO
-  'js/timer.js', // INCLUÍDO (Estava no index.html mas não no sw.js)
-  'js/serviceWorker.js', // INCLUÍDO (Estava no index.html mas não no sw.js) // --- MÍDIA E ÍCONES ---
-  'icon-512.jpg', // CORRIGIDO
-  'icon-192.png', // CORRIGIDO
-  'manifest.json', // CORRIGIDO
-];
-
-// O restante do código pode permanecer o mesmo
-
+const VERSION = '__BUILD_VERSION__';
+const PREFIX = 'findom-wallet-' + new URL(self.registration.scope).pathname + '-';
+const CACHE = PREFIX + VERSION;
+const ASSETS = /*__PRECACHE__*/ [];
 self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      for (const url of urlsToCache) {
-        try {
-          const res = await fetch(url, { cache: 'no-store' });
-          if (res && res.ok) {
-            await cache.put(url, res.clone());
-          } else {
-            console.warn('SW install: recurso não encontrado (ignorado):', url, res && res.status);
-          }
-        } catch (err) {
-          console.warn('SW install: erro ao buscar (ignorado):', url, err);
-        }
-      }
-      await self.skipWaiting();
-    })()
+      const cache = await caches.open(CACHE);
+      await cache.addAll(ASSETS.map((path) => new Request(new URL(path, self.registration.scope), { cache: 'reload' })));
+    })(),
   );
 });
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+  if (event.data?.type === 'VERSION') event.ports[0]?.postMessage(VERSION);
 });
-
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    (async () => {
+      const names = await caches.keys();
+      for (const name of names) {
+        if (name.startsWith(PREFIX) && name !== CACHE) await caches.delete(name);
+        else if (name.startsWith('simulador-cache-')) {
+          const old = await caches.open(name);
+          if (await old.match(new URL('index.html', self.registration.scope))) await caches.delete(name);
+        }
+      }
+      await self.clients.claim();
+    })(),
+  );
+});
 self.addEventListener('fetch', (event) => {
-  event.respondWith(caches.match(event.request).then((r) => r || fetch(event.request)));
+  if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
+  if (!event.request.url.startsWith(self.registration.scope)) return;
+  event.respondWith(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+      if (event.request.mode === 'navigate') {
+        const shell = await cache.match(new URL('index.html', self.registration.scope));
+        if (shell) return shell;
+      }
+      return fetch(event.request);
+    })(),
+  );
 });

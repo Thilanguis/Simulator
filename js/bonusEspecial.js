@@ -7,7 +7,7 @@
   // Multiplicador global (vem de efeitoBonusAtivoGanhoCredito)
   // ------------------------------------------------------------
   function getBonusEspecialMultiplier() {
-    var mult = typeof window.BONUS_ESPECIAL_MULTIPLIER === 'number' ? window.BONUS_ESPECIAL_MULTIPLIER : 1;
+    var mult = 1 + getEconomy().bonusPercent / 100;
     return window.bonusEspecialAtivo ? mult : 1;
   }
   window.getBonusEspecialMultiplier = getBonusEspecialMultiplier;
@@ -34,7 +34,7 @@
   // ----------------- Badge ao lado do "Como ganhou" -----------------
   function renderBonusEspecialInlineBadge() {
     try {
-      var mult = typeof window.BONUS_ESPECIAL_MULTIPLIER === 'number' ? window.BONUS_ESPECIAL_MULTIPLIER : 1;
+      var mult = 1 + getEconomy().bonusPercent / 100;
       var badge = document.getElementById('bonusEspecialInline');
       var active = !!window.bonusEspecialAtivo;
 
@@ -131,7 +131,7 @@
     try {
       var banner = document.getElementById('bonusEspecialBanner');
       var active = !!window.bonusEspecialAtivo;
-      var mult = typeof window.BONUS_ESPECIAL_MULTIPLIER === 'number' ? window.BONUS_ESPECIAL_MULTIPLIER : 1;
+      var mult = 1 + getEconomy().bonusPercent / 100;
 
       if (!active) {
         if (banner) banner.remove();
@@ -179,9 +179,9 @@
   function ensureBonusChip() {
     if (bonusChipGanhoEl) return bonusChipGanhoEl;
 
-    var mult = typeof window.BONUS_ESPECIAL_MULTIPLIER === 'number' ? window.BONUS_ESPECIAL_MULTIPLIER : 1;
+    var mult = 1 + getEconomy().bonusPercent / 100;
     var pctNumber = Math.round((mult - 1) * 100);
-    if (!pctNumber) pctNumber = 15;
+
     var chipText = '+' + pctNumber + '%';
 
     var chip = document.createElement('div');
@@ -247,9 +247,9 @@
       var comBonus = Math.round(base * mult * 100) / 100;
 
       bonusPreviewValorEl.innerHTML = [
-        '<span style="opacity:.8">Preço com bônus: </span>',
-        '<span style="text-decoration:line-through;opacity:.6;margin-right:6px">R$ ' + bonusFmtBR(base) + '</span>',
-        '<strong style="color:#a7f3d0">R$ ' + bonusFmtBR(comBonus) + '</strong>',
+        '<span style="opacity:.8">Ganho com bônus: </span>',
+        '<span style="text-decoration:line-through;opacity:.6;margin-right:6px">' + bonusFmtBR(base) + '</span>',
+        '<strong style="color:#a7f3d0">' + bonusFmtBR(comBonus) + '</strong>',
       ].join('');
       bonusPreviewValorEl.style.display = 'block';
 
@@ -315,13 +315,13 @@
       // deixa o INPUT riscado com o valor base
       // input.style.textDecoration = 'line-through';
 
-      // texto: Valor por minuto com bônus: ~R$ 3,99~ R$ 4,59
+      // texto: Valor por minuto com bônus: ~3,99~ 4,59
       bonusPreviewMinutoEl.innerHTML = [
         '<span style="opacity:.8">Valor por minuto com bônus: </span>',
-        '<span style="text-decoration:line-through;opacity:.6;margin-right:6px">R$ ',
+        '<span style="text-decoration:line-through;opacity:.6;margin-right:6px">',
         bonusFmtBR(base),
         '</span>',
-        '<strong style="color:#a7f3d0">R$ ',
+        '<strong style="color:#a7f3d0">',
         bonusFmtBR(comBonus),
         '</strong>',
       ].join('');
@@ -351,7 +351,7 @@
       }
 
       var active = !!window.bonusEspecialAtivo;
-      var base = bonusParseBR(display.textContent);
+      var base = Number(display.textContent.replace(/\./g, '').replace(',', '.')) || 0;
       if (!active || base <= 0) {
         bonusPreviewTimerEl.style.display = 'none';
         display.style.textDecoration = 'none';
@@ -361,11 +361,11 @@
       var mult = getBonusEspecialMultiplier();
       var comBonus = Math.round(base * mult * 100) / 100;
 
-      // risca o valor de cima (Valor: R$ X,XX)
+      // risca o valor de cima (Valor: X,XX)
       display.style.textDecoration = 'line-through';
 
-      // texto: Valor real com bônus (tempo): R$ 3,45
-      bonusPreviewTimerEl.innerHTML = ['<span style="opacity:.8">Valor real com bônus (tempo): </span>', '<strong style="color:#a7f3d0">R$ ', bonusFmtBR(comBonus), '</strong>'].join('');
+      // texto: Créditos com bônus (tempo): 3,45
+      bonusPreviewTimerEl.innerHTML = ['<span style="opacity:.8">Valor real com bônus (tempo): </span>', '<strong style="color:#a7f3d0">', bonusFmtBR(comBonus), '</strong>'].join('');
 
       bonusPreviewTimerEl.style.display = 'block';
     } catch (e) {}

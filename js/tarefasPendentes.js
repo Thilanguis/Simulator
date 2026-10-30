@@ -31,11 +31,11 @@ function renderTarefasPendentes() {
           // Remove a tarefa do array de dados (tarefasPendentes)
           tarefasPendentes.splice(
             tarefasPendentes.findIndex((t) => t.id === tarefa.id),
-            1
+            1,
           );
 
           // Salva a lista atualizada no navegador
-          localStorage.setItem('tarefasPendentes', JSON.stringify(tarefasPendentes));
+          AppStorage.setItem('tarefasPendentes', JSON.stringify(tarefasPendentes));
 
           // Remove o elemento DIV da tela
           div.remove();

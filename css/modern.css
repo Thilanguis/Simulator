@@ -1,0 +1,382 @@
+:root {
+  color-scheme: dark;
+  --gold: #e9c66a;
+  --muted: #bab4ac;
+  --line: #40362e;
+  --red: #9c242d;
+}
+* {
+  box-sizing: border-box;
+}
+[hidden] {
+  display: none !important;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: Georgia, serif;
+}
+.container {
+  max-width: 1000px;
+  width: 100%;
+  padding: 30px 24px 110px;
+}
+h1 {
+  font-size: clamp(27px, 6vw, 48px);
+}
+h2 {
+  font-size: clamp(18px, 3vw, 23px);
+}
+h3 {
+  color: var(--gold);
+}
+p,
+.hint {
+  line-height: 1.6;
+}
+small,
+.hint {
+  color: var(--muted);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+}
+.section {
+  border: 1px solid var(--line);
+  margin-bottom: 24px;
+}
+.app-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+}
+.app-nav button {
+  flex: 1;
+  margin: 0;
+  padding: 12px;
+  background: #26221f;
+  color: var(--gold);
+  border: 1px solid var(--line);
+}
+.app-nav button[aria-pressed='true'] {
+  background: #7b1d26;
+  color: #fff0c6;
+  border-color: var(--gold);
+}
+button,
+input,
+select,
+textarea {
+  font-family: system-ui, sans-serif;
+}
+button {
+  min-height: 44px;
+}
+button:focus-visible,
+a:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+textarea {
+  width: 100%;
+  min-height: 130px;
+  border: 1px solid #665847;
+  border-radius: 10px;
+  padding: 12px;
+  background: #111;
+  color: #eee;
+  font-size: 15px;
+  resize: vertical;
+}
+label {
+  text-transform: none;
+  letter-spacing: 0.2px;
+}
+input[type='checkbox'] {
+  width: 20px;
+  min-height: 20px;
+}
+select {
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+input,
+select {
+  min-height: 44px;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.metric {
+  padding: 18px;
+  background: linear-gradient(135deg, #30231e, #171717);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.metric span {
+  display: block;
+  color: var(--muted);
+  font: 13px system-ui;
+}
+.metric strong {
+  display: block;
+  margin-top: 9px;
+  font: 600 clamp(17px, 3vw, 25px) system-ui;
+  color: var(--gold);
+}
+.form-grid,
+.filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 16px;
+}
+.filters {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.btn-row button {
+  flex: 1;
+}
+.subtle-btn {
+  background: #333;
+  color: #ddd;
+}
+.danger {
+  background: #74222a;
+  color: #fff;
+}
+.notice {
+  border-left: 3px solid var(--gold);
+  background: #2c251c;
+  padding: 14px;
+  white-space: pre-line;
+}
+.error {
+  color: #ffc2b7;
+}
+.negative {
+  color: #ff9f95 !important;
+}
+.finance-entry {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+.finance-entry header {
+  display: flex;
+  gap: 12px;
+  align-items: start;
+  justify-content: space-between;
+}
+.finance-entry strong {
+  font-family: system-ui;
+}
+.finance-entry p {
+  margin: 6px 0;
+  overflow-wrap: anywhere;
+}
+.finance-entry button {
+  padding: 8px 14px;
+  margin: 8px 6px 0 0;
+  font-size: 13px;
+}
+.status {
+  font: 12px system-ui;
+  border: 1px solid #6e6456;
+  padding: 4px 8px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.status.paid {
+  color: #8dd7ad;
+}
+.status.pending {
+  color: #f0c670;
+}
+details {
+  margin: 14px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+}
+summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: var(--gold);
+  line-height: 1.5;
+}
+.category-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  font: 14px system-ui;
+}
+.preview-row {
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.preview-row .row-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.preview-row label {
+  margin-top: 8px;
+}
+.preview-row input[type='checkbox'] {
+  flex: 0 0 20px;
+}
+.scroll-area {
+  max-height: 650px;
+  overflow: auto;
+  padding-right: 5px;
+}
+#shareText {
+  min-height: 250px;
+}
+#storageWarning {
+  position: sticky;
+  top: 0;
+  z-index: 100000;
+  background: #631c24;
+  padding: 14px;
+  white-space: pre-line;
+}
+#customEconomyJson {
+  min-height: 280px;
+  font-family: monospace;
+}
+#simulator .saldo-row span::after {
+  content: ' créditos';
+  font-size: 12px;
+}
+#simulator .tarefa-item {
+  flex-wrap: wrap;
+}
+#roletaWheel {
+  max-width: 100%;
+}
+footer {
+  color: var(--muted);
+  font: 12px system-ui;
+  margin: 25px 0;
+}
+dialog {
+  background: #1b1715;
+  border: 1px solid var(--gold);
+  border-radius: 12px;
+  width: min(650px, 94vw);
+  color: #eee;
+}
+dialog::backdrop {
+  background: #000b;
+}
+dialog button {
+  margin: 8px 8px 0 0;
+}
+@media (max-width: 600px) {
+  .container {
+    padding: 18px 12px 100px;
+  }
+  .section {
+    padding: 18px 14px;
+  }
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid,
+  .filters {
+    grid-template-columns: 1fr;
+  }
+  .app-nav {
+    gap: 6px;
+  }
+  .app-nav button {
+    font-size: 12px;
+    padding: 10px 6px;
+  }
+  #historico > div > div:first-child {
+    flex-wrap: wrap;
+  }
+  #btnRoletaFlutuante {
+    right: 15px !important;
+    bottom: 18px !important;
+  }
+  #roletaWheel {
+    transform-origin: center;
+  }
+  #roletaBox {
+    padding: 12px !important;
+  }
+  .finance-entry header {
+    flex-wrap: wrap;
+  }
+}
+.photo-container {
+  overflow: hidden;
+}
+#simuladorTitulo {
+  color: var(--gold);
+  text-shadow: 0 0 14px #9c242d55;
+  overflow: clip;
+}
+#updateBanner {
+  position: sticky;
+  top: 8px;
+  z-index: 999999;
+}
+.app-nav button {
+  white-space: normal;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  #fx-embers {
+    display: none;
+  }
+}
+
+.summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.quick-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.quick-nav button {
+  flex: 1;
+  background: #33231e;
+  color: var(--gold);
+  font-size: 13px;
+  padding: 12px 8px;
+}
+.bonusActiveBanner {
+  display: inline-flex;
+  color: var(--gold);
+  font: 11px system-ui;
+  margin: 0 10px 14px 0;
+}
+@media (max-width: 600px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metric {
+    padding: 14px;
+  }
+  .metric strong {
+    font-size: 19px;
+  }
+}

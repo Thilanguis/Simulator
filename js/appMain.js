@@ -39,20 +39,24 @@ document.addEventListener('DOMContentLoaded', () => {
   // ESTADO / STORAGE
   // -----------------------------
   if (!Array.isArray(typeof historico !== 'undefined' ? historico : undefined)) {
-    historico = JSON.parse(localStorage.getItem('historico') || '[]');
+    historico = JSON.parse(AppStorage.getItem('historico') || '[]');
   }
   if (!Array.isArray(typeof tarefasPendentes !== 'undefined' ? tarefasPendentes : undefined)) {
-    tarefasPendentes = JSON.parse(localStorage.getItem('tarefasPendentes') || '[]');
+    tarefasPendentes = JSON.parse(AppStorage.getItem('tarefasPendentes') || '[]');
   }
 
   // Sistema de bloqueios
-  let tarefasBloqueadas = JSON.parse(localStorage.getItem('tarefasBloqueadas') || '[]');
+  let tarefasBloqueadas = JSON.parse(AppStorage.getItem('tarefasBloqueadas') || '[]');
 
   // Aceleração global — boosters ativos
-  let accelBoosts = JSON.parse(localStorage.getItem('accelBoosts') || '[]');
+  let accelBoosts = JSON.parse(AppStorage.getItem('accelBoosts') || '[]');
   let _accelLoop = null; // requestAnimationFrame id
+  let lastAccelSave = 0;
+  let lastBlocksFrameSave = 0;
   function saveAccelBoosts() {
-    localStorage.setItem('accelBoosts', JSON.stringify(accelBoosts));
+    if (accelBoosts.length && Date.now() - lastAccelSave < 1000) return;
+    lastAccelSave = Date.now();
+    AppStorage.setItem('accelBoosts', JSON.stringify(accelBoosts));
   }
 
   // -----------------------------
@@ -67,26 +71,10 @@ document.addEventListener('DOMContentLoaded', () => {
     96: 'ACELERAR_GLOBAL_4D_1H',
   };
 
-  const LIMITES_TAREFA_HORAS = {
-    'Ela decide toda a agenda do dia': 24 * 14, // 15 dias
-    'Vale de escolha de FILME': 24 * 10, // 10 dias
-    'Vale sair sozinha com amiga': 24 * 7, // 7 dias
-    'Ganha 60 dólares na vida real': 24 * 4, // 4 dias
-    // redutores (IDs canônicos)
-    REDUZIR_BLOQUEIO_6H: 6,
-    REDUZIR_BLOQUEIO_12H: 12,
-    REDUZIR_BLOQUEIO_1D: 24,
-    REDUZIR_BLOQUEIO_3D: 72,
-    ACELERAR_GLOBAL_4D_1H: 96,
-  };
+  const LIMITES_TAREFA_HORAS = Economy.config.cooldowns;
 
   // >>> DURAÇÃO dos redutores como efeito cronometrado
-  const REDUTOR_DURACAO_MS = {
-    REDUZIR_BLOQUEIO_6H: 60 * 1000, // 6h em 60s (exemplo)
-    REDUZIR_BLOQUEIO_12H: 60 * 1000, // 12h em 90s
-    REDUZIR_BLOQUEIO_1D: 60 * 1000, // 1d em 120s
-    REDUZIR_BLOQUEIO_3D: 60 * 1000, // 3d em 180s
-  };
+  const REDUTOR_DURACAO_MS = Object.fromEntries(Economy.config.services.filter((s) => s.reduceHours).map((s) => [s.id, Economy.config.reducerDurationMs]));
 
   function getBloqueioMsPorTarefa(nome) {
     const horas = LIMITES_TAREFA_HORAS[nome] || 0;
@@ -121,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function parseTarefa(val) {
     const [valorStr, tarefa, descricao] = (val || '').split('|');
     return {
-      valor: parseInt(valorStr, 10) || 0,
+      valor: getEconomy().prices[tarefa] || 0,
       tarefa: tarefa || '',
       descricao: descricao || '',
     };
@@ -132,19 +120,21 @@ document.addEventListener('DOMContentLoaded', () => {
   // -----------------------------
 
   function atualizarSaldo() {
+    saldoDominadora = Economy.round(saldoDominadora);
     if (!saldoElement) return;
+    document.getElementById('homeCredits').textContent = formatBR(saldoDominadora);
     saldoElement.textContent =
       typeof formatBR === 'function'
         ? formatBR(saldoDominadora)
         : (saldoDominadora || 0).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           });
-    localStorage.setItem('saldoDominadora', saldoDominadora);
+    AppStorage.setItem('saldoDominadora', saldoDominadora);
   }
 
   function getFilteredHistorico() {
-    const selected = filterDateInput && filterDateInput.value ? new Date(filterDateInput.value) : null;
+    const selected = filterDateInput && filterDateInput.value ? new Date(filterDateInput.value + 'T00:00:00') : null;
     const dayStart = selected ? new Date(selected.getFullYear(), selected.getMonth(), selected.getDate(), 0, 0, 0, 0) : null;
     const dayEnd = selected ? new Date(selected.getFullYear(), selected.getMonth(), selected.getDate(), 23, 59, 59, 999) : null;
 
@@ -173,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const byDay = {};
     for (const h of filtered) {
-      const key = new Date(h.timestamp).toISOString().slice(0, 10);
+      const key = new Date(h.timestamp).toLocaleDateString('sv-SE');
       (byDay[key] ||= []).push(h);
     }
 
@@ -196,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.style.cssText = 'background:#121212;border:1px solid #2e2e2e;border-radius:10px;padding:10px 12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(0,0,0,.35), inset 0 0 8px rgba(184,134,11,.06)';
 
         const isGanho = h.tipo === 'ganho';
+        const typeLabel = h.tipo === 'premio' ? 'Prêmio' : h.tipo === 'ajuste' ? 'Ajuste' : isGanho ? 'Ganho' : 'Gasto';
 
         const valorHTML = `<strong style="min-width:120px;display:inline-block;text-align:right;color:${isGanho ? '#0fdc81' : '#ff6a5f'}">${
           typeof formatBR === 'function' ? formatBR(h.valor) : 'R$ ' + (h.valor || 0).toLocaleString('pt-BR')
@@ -204,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const badge = `<span style="font-size:12px;font-weight:800;padding:4px 8px;border-radius:999px;border:1px solid ${isGanho ? 'rgba(15,220,129,.6)' : 'rgba(255,106,95,.6)'};background:${
           isGanho ? 'rgba(15,220,129,.1)' : 'rgba(255,106,95,.08)'
         };color:${isGanho ? '#0fdc81' : '#ff6a5f'};text-transform:uppercase;letter-spacing:.5px;margin-right:10px">
-        ${isGanho ? 'Ganho' : 'Gasto'}
+        ${typeLabel}
       </span>`;
 
         const hora = new Date(h.timestamp).toLocaleTimeString('pt-BR', {
@@ -216,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         card.innerHTML = `
         <div style="display:flex;align-items:center;gap:10px">
           ${badge}
-          <div style="flex:1;color:#ddd">${h.descricao}</div>
+          <div style="flex:1;color:#ddd">${escapeHTML(h.descricao)}</div>
           ${valorHTML}
           <button class="btn-del-hist" title="Apagar este registro" onclick="deletarItemHistorico('${h.timestamp}')">🗑</button>
         </div>
@@ -243,43 +234,22 @@ document.addEventListener('DOMContentLoaded', () => {
           const chipText = isBonusGanho ? '#0fdc81' : isDesconto ? '#ff6a5f' : '#ffd700';
 
           const valorOriginalFmt = Math.abs(h.valorOriginal).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           });
           const valorFinalFmt = Math.abs(h.valorFinal).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           });
           const difFmt = difAbs.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
-          });
-
-          // Para o caso 0%, calculamos o "poderia ter sido 15%"
-          const potencial = Math.round(Math.abs(h.valorOriginal) * 0.15 * 100) / 100;
-          const potencialFmt = potencial.toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           });
 
           let detalhesHtml = '';
 
           if (isNeutro) {
-            const verbo = isGanhoLocal ? 'ganhar' : 'economizar';
-            const tipoTexto = isGanhoLocal ? 'em bônus' : 'em desconto';
-
-            detalhesHtml = `
-      <span style="flex:1;">
-        <span style="opacity:.8;">Sem bônus aplicado:</span>
-        <span style="margin-left:4px;font-weight:800;color:#ffde7a;">
-          ${valorFinalFmt}
-        </span>
-        <br>
-        <span style="opacity:.75;color:#ffde7a;">
-          Você deixou de ${verbo} ${potencialFmt} ${tipoTexto} (15%).
-        </span>
-      </span>
-    `;
+            detalhesHtml = '<span>Sem bônus aplicado: ' + valorFinalFmt + ' créditos</span>';
           } else {
             const labelPrefix = isBonusGanho ? 'Bônus:' : 'Desconto:';
             const ajusteLabel = isBonusGanho ? 'ajuste de' : 'economia de';
@@ -321,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function adicionarHistorico(descricao, valor, tipo, detalhesBonus = null) {
+    saldoDominadora = Economy.round(saldoDominadora);
     const timestamp = new Date().toISOString();
 
     const entry = {
@@ -339,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     historico.unshift(entry);
-    localStorage.setItem('historico', JSON.stringify(historico));
+    AppStorage.setItem('historico', JSON.stringify(historico));
     renderHistorico();
   }
 
@@ -349,21 +320,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const item = historico[idx];
 
-    if (!confirm('Apagar este registro do histórico e ajustar o saldo?')) return;
-
-    // Reverte o efeito no saldo
-    if (item.tipo === 'gasto') {
-      saldoDominadora += item.valor;
-    } else if (item.tipo === 'ganho') {
-      saldoDominadora -= item.valor;
-    }
+    if (!confirm('Arquivar este registro? O saldo, tarefas e benefícios já adquiridos serão mantidos.')) return;
+    const archived = JSON.parse(AppStorage.getItem('archivedHistory') || '[]');
+    archived.push(item);
+    AppStorage.setItem('archivedHistory', JSON.stringify(archived));
 
     // Remove do array
     historico.splice(idx, 1);
 
     // Persiste tudo
-    localStorage.setItem('historico', JSON.stringify(historico));
-    localStorage.setItem('saldoDominadora', saldoDominadora);
+    AppStorage.setItem('historico', JSON.stringify(historico));
+    AppStorage.setItem('saldoDominadora', saldoDominadora);
 
     atualizarSaldo();
     renderHistorico();
@@ -375,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.removerTarefaLimitada = function (nome) {
     tarefasBloqueadas = tarefasBloqueadas.filter((t) => t.nome !== nome);
-    localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+    AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
     atualizarTarefasLimitadasUI();
     atualizarBloqueiosNoSelectTarefa();
   };
@@ -389,7 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Remove expiradas e persiste
     tarefasBloqueadas = (tarefasBloqueadas || []).filter((t) => t.expiraEm > agora);
-    localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+    AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
 
     if (tarefasBloqueadas.length === 0) {
       lista.innerHTML = '<p style="color:#aaa;">Nenhuma tarefa limitada ativa.</p>';
@@ -476,7 +443,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function setInstant(wrap, ms) {
       const el = wrap.querySelector('.relogio');
       if (!el) return;
-      const v = Math.max(0, ms | 0);
+      const v = Math.max(0, Math.floor(ms));
       el.textContent = fmtDHMS(v);
       wrap.dataset.displayMs = String(v);
     }
@@ -550,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const s = Math.max(0, Math.floor((ms % 60000) / 1000));
       const p2 = (n) => String(n).padStart(2, '0');
       el.textContent = `${d}d ${p2(h)}h ${p2(m)}m ${p2(s)}s`;
-      wrap.dataset.displayMs = String(Math.max(0, ms | 0));
+      wrap.dataset.displayMs = String(Math.max(0, Math.floor(ms)));
     }
 
     document.querySelectorAll('.tempo-restante').forEach((wrap) => {
@@ -587,7 +554,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const before = tarefasBloqueadas.length;
           tarefasBloqueadas = tarefasBloqueadas.filter((t) => !(nomes.has(t.nome) || t.expiraEm <= now));
           if (tarefasBloqueadas.length !== before) {
-            localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+            AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
           }
         }
       } catch {}
@@ -665,7 +632,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function atualizarBloqueiosNoSelectTarefa() {
     const agora = Date.now();
 
-    const bloqueadas = JSON.parse(localStorage.getItem('tarefasBloqueadas') || '[]').filter((t) => t.expiraEm > agora);
+    const bloqueadas = JSON.parse(AppStorage.getItem('tarefasBloqueadas') || '[]').filter((t) => t.expiraEm > agora);
     const map = new Map(bloqueadas.map((t) => [t.nome, t.expiraEm]));
 
     Array.from(selectTarefaSelect.options).forEach((opt) => {
@@ -767,8 +734,9 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .filter((t) => t.expiraEm > now2);
 
-          if (changed) {
-            localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+          if (changed && Date.now() - lastBlocksFrameSave >= 1000) {
+            lastBlocksFrameSave = Date.now();
+            AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
             try {
               atualizarTarefasLimitadasUI();
               atualizarBloqueiosNoSelectTarefa();
@@ -857,8 +825,9 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .filter((t) => t.expiraEm > now2);
 
-          if (changed) {
-            localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+          if (changed && Date.now() - lastBlocksFrameSave >= 1000) {
+            lastBlocksFrameSave = Date.now();
+            AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
             try {
               atualizarTarefasLimitadasUI();
               atualizarBloqueiosNoSelectTarefa();
@@ -899,7 +868,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setBlocks(arr) {
       try {
         tarefasBloqueadas = Array.isArray(arr) ? arr : [];
-        localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+        AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
         try {
           atualizarTarefasLimitadasUI();
           atualizarBloqueiosNoSelectTarefa();
@@ -932,7 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {}
     bonusCheckbox.addEventListener('change', () => {
       window.bonusEspecialAtivo = bonusCheckbox.checked;
-      localStorage.setItem('bonusEspecialAtivo', JSON.stringify(bonusEspecialAtivo));
+      AppStorage.setItem('bonusEspecialAtivo', JSON.stringify(bonusEspecialAtivo));
       if (typeof updateBonusEspecialUI === 'function') updateBonusEspecialUI();
     });
   }
@@ -975,7 +944,7 @@ document.addEventListener('DOMContentLoaded', () => {
     enviarHistoricoWhatsAppBtn.addEventListener('click', (ev) => {
       ev.preventDefault();
       try {
-        const numeroWhatsApp = '+14386305973';
+        const numeroWhatsApp = ''; // recipient is chosen in WhatsApp
         const filtered = getFilteredHistorico();
         if (!filtered.length) return alert('Não há itens no histórico para enviar.');
         const dataSelec = filterDateInput && filterDateInput.value ? new Date(filterDateInput.value) : null;
@@ -985,8 +954,8 @@ document.addEventListener('DOMContentLoaded', () => {
           const quando = d.toLocaleString('pt-BR');
           const tipo = h.tipo === 'gasto' ? 'Gasto' : 'Ganho';
           const val = (h.valor || 0).toLocaleString('pt-BR', {
-            style: 'currency',
-            currency: 'BRL',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           });
           return `${idx + 1}. [${quando}] ${tipo}: ${h.descricao} — ${val}`;
         });
@@ -1000,7 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
           currency: 'BRL',
         });
         const mensagem = `${titulo}\n\n${linhas.join('\n')}\n\n— Total líquido no período: *${totalFmt}*\n— Saldo atual: *${saldoFmt}*`;
-        const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
+        const urlWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensagem)}`;
         window.open(urlWhatsApp, '_blank');
       } catch (e) {
         console.error('Falha ao abrir WhatsApp:', e);
@@ -1013,9 +982,11 @@ document.addEventListener('DOMContentLoaded', () => {
     resetBtn.addEventListener('click', (ev) => {
       ev.preventDefault();
       if (!confirm('Tem certeza que deseja zerar o saldo?')) return;
+      const oldBalance = saldoDominadora;
       saldoDominadora = 0;
+      adicionarHistorico('Ajuste manual de saldo: ' + oldBalance + ' → 0', 0, 'ajuste');
       try {
-        localStorage.setItem('saldoDominadora', '0');
+        AppStorage.setItem('saldoDominadora', '0');
       } catch {}
       atualizarSaldo();
       renderHistorico();
@@ -1025,12 +996,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (limparBtn) {
     limparBtn.addEventListener('click', (ev) => {
       ev.preventDefault();
-      if (!window.historico || window.historico.length === 0) return alert('O histórico já está vazio.');
-      if (!confirm('Apagar todo o histórico de transações?')) return;
+      if (!historico || historico.length === 0) return alert('O histórico já está vazio.');
+      if (!confirm('Arquivar todo o histórico? O saldo será mantido e o arquivo continuará no backup.')) return;
+      const archive = JSON.parse(AppStorage.getItem('archivedHistory') || '[]');
+      AppStorage.setItem('archivedHistory', JSON.stringify([...archive, ...historico]));
 
       historico.length = 0;
       try {
-        localStorage.setItem('historico', JSON.stringify([]));
+        AppStorage.setItem('historico', JSON.stringify([]));
       } catch {}
       if (filterDateInput) filterDateInput.value = '';
       renderHistorico();
@@ -1044,18 +1017,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (tipo === 'gasto') {
         const tarefaSelecionada = (selectTarefaSelect && selectTarefaSelect.value) || '';
-        if (!tarefaSelecionada) return alert('Por favor, selecione uma tarefa.');
+        if (!tarefaSelecionada || tarefaSelecionada === '0') return alert('Por favor, selecione uma tarefa.');
         ({ valor, tarefa, descricao } = parseTarefa(tarefaSelecionada));
 
         const optSel = selectTarefaSelect?.selectedOptions?.[0] || null;
+        const catalogItem = Economy.config.services.find((s) => s.id === tarefa);
+        if (!catalogItem || !(valor > 0)) return alert('Selecione um serviço válido.');
+        if (catalogItem.realBenefit) {
+          window.requestRedemption({ credits: valor, serviceId: catalogItem.id, ...getEconomy().benefits[catalogItem.id], description: catalogItem.label });
+          return;
+        }
+        if (tarefasBloqueadas.some((b) => b.nome === tarefa && b.expiraEm > Date.now())) return alert('Este item ainda está em cooldown.');
+        const originalCost = valor;
+        const receivesDiscount = !!window.bonusEspecialAtivo && !catalogItem.reduceHours && !tarefa.startsWith('ACELERAR_');
+        valor = Economy.adjusted(valor, 'cost', receivesDiscount, getEconomy());
+        if (!confirm('Confirmar compra de ' + catalogItem.label + ' por ' + valor.toLocaleString('pt-BR') + ' créditos?')) return;
 
         // ⚡ Aceleração Global
         if (/ACELERAR_GLOBAL_4D_1H/.test((selectTarefaSelect && selectTarefaSelect.value) || '')) {
-          const custo = 18000;
+          const custo = valor;
           if (saldoDominadora < custo) return alert('Saldo insuficiente!');
 
           const REDUZ_TOTAL_MS = 4 * 24 * 60 * 60 * 1000; // 4 dias
-          const DURACAO_MS = 1 * 60 * 1000; // 5 minutos
+          const DURACAO_MS = Economy.config.reducerDurationMs; // 5 minutos
           const perSecondMs = REDUZ_TOTAL_MS / (DURACAO_MS / 1000);
 
           saldoDominadora -= custo;
@@ -1072,7 +1056,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nome: 'ACELERAR_GLOBAL_4D_1H',
                 expiraEm: agora2 + cdMs,
               });
-              localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+              AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
               atualizarTarefasLimitadasUI();
               atualizarBloqueiosNoSelectTarefa();
             }
@@ -1111,7 +1095,7 @@ document.addEventListener('DOMContentLoaded', () => {
               nome: redutorId,
               expiraEm: agora + cooldownMs,
             });
-            localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+            AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
           }
 
           adicionarHistorico(`Redução cronometrada (−${horasReducao}h em ${Math.round(duracaoMs / 1000)}s)`, valor, 'gasto');
@@ -1133,38 +1117,15 @@ document.addEventListener('DOMContentLoaded', () => {
           }
           const expiraEm = agora + msBloqueio;
           tarefasBloqueadas.push({ nome: tarefa, expiraEm });
-          localStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+          AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
           atualizarTarefasLimitadasUI();
           atualizarBloqueiosNoSelectTarefa();
         }
 
-        // 🔥 DESCONTO DE LINGERIE EM COMPRA
-        const usaBonus = !!window.bonusEspecialAtivo;
-
-        // Valor que veio do select (pode já estar com o bônus aplicado)
-        let valorBruto = valor;
-
-        // Tenta recuperar o valor original (sem desconto) a partir do texto da opção
-        let valorOriginal = valorBruto;
-        if (usaBonus && optSel && optSel.textContent) {
-          const match = optSel.textContent.match(/R\$\s*([\d\.,]+)/);
-          if (match) {
-            const numerico = parseFloat(match[1].replace(/\./g, '').replace(',', '.'));
-            if (!Number.isNaN(numerico) && numerico > 0) {
-              valorOriginal = numerico;
-            }
-          }
-        }
-
-        let percentual = 0;
-        let valorFinal = valorBruto;
-        let diferenca = 0;
-
-        if (usaBonus) {
-          percentual = -15;
-          valorFinal = Math.round(valorOriginal * 0.85 * 100) / 100;
-          diferenca = valorFinal - valorOriginal;
-        }
+        const valorOriginal = originalCost;
+        const valorFinal = valor;
+        const diferenca = Economy.round(valorFinal - valorOriginal);
+        const percentual = receivesDiscount ? -getEconomy().discountPercent : 0;
 
         saldoDominadora -= valorFinal;
 
@@ -1179,11 +1140,11 @@ document.addEventListener('DOMContentLoaded', () => {
           id: Date.now(),
           tarefa: tarefa,
           descricao: descricao,
-          valor: valor,
+          valor: valorFinal,
           timestamp: new Date().toISOString(),
         };
         tarefasPendentes.unshift(novaTarefa);
-        localStorage.setItem('tarefasPendentes', JSON.stringify(tarefasPendentes));
+        AppStorage.setItem('tarefasPendentes', JSON.stringify(tarefasPendentes));
         if (typeof renderTarefasPendentes === 'function') renderTarefasPendentes();
 
         atualizarSaldo();
@@ -1192,24 +1153,18 @@ document.addEventListener('DOMContentLoaded', () => {
             aplicarBonusDeTarefaDuranteTimer(valor, tarefa);
           } catch {}
         }
-
-        try {
-          const numeroWhatsApp = '+14386305973';
-          const ultimo = historico[0];
-          const dataHora = typeof formatDate === 'function' ? formatDate(ultimo.timestamp) : new Date(ultimo.timestamp).toLocaleString('pt-BR');
-          const mensagem = `\n🧾 *RECIBO DE COMPRA* 🧾\n----------------------------------------\n🗓 *Data/Hora:* ${dataHora}\n📌 *Tarefa:* ${tarefa}\n📝 *Descrição:* ${descricao}\n----------------------------------------\n💰 *Valor:* R$ ${valor.toLocaleString(
-            'pt-BR'
-          )}\n👑 *Saldo Atual:* ${saldoDominadora.toLocaleString('pt-BR')}\n----------------------------------------\n✅ Ganhe saldo e compre serviços sem moderação! 🙏\n`;
-          const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(mensagem)}`;
-          window.open(urlWhatsApp, '_blank');
-        } catch {}
       } else {
         // ===== GANHO =====
         const ganhoSelecionado = (selectGanhoSelect && selectGanhoSelect.value) || '';
         const valorInput = valorGanhoInput && valorGanhoInput.value;
-        if (!ganhoSelecionado || !valorInput || parseInt(valorInput) <= 0) return alert('Por favor, selecione uma forma de ganho e insira um valor válido.');
+        if (!ganhoSelecionado || !valorInput || !Number.isFinite(Number(valorInput)) || Number(valorInput) <= 0) return alert('Por favor, selecione uma forma de ganho e insira um valor válido.');
 
-        valor = parseInt(valorInput);
+        valor = Economy.round(Number(valorInput));
+        if (getEconomy().gains[ganhoSelecionado] !== undefined) {
+          calcularValorGanho();
+          valor = Number(valorGanhoInput.value);
+        }
+        if (!(valor > 0) || (!getEconomy().gains[ganhoSelecionado] && valor > getEconomy().manualGainMax)) return alert('Ganho manual acima do limite configurado.');
         tarefa = ganhoSelecionado;
 
         // 🔥 Extra: detalhar "Pés na cara" com os checkboxes marcados
@@ -1282,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPlayPause.addEventListener('click', () => {
       try {
         if (!timerEmSessao) {
-          baseMultiplicadorSessao = 1;
+          baseMultiplicadorSessao = getEconomy().timer.base;
           somaIncrementosValorSessao = 0;
           contadorTarefasTimer = 0;
           valorPorMinutoInput.value = baseMultiplicadorSessao;
@@ -1301,21 +1256,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (typeof requestWakeLock === 'function') requestWakeLock();
 
-        const INCREMENT_INTERVAL_SECONDS = 3;
-        const INCREMENT_VALUE = 0.33;
-
+        timerLastTick = Date.now();
         timerInterval = setInterval(() => {
-          tempoSegundos = (typeof tempoSegundos === 'number' ? tempoSegundos : 0) + 1;
-
-          if (tempoSegundos % INCREMENT_INTERVAL_SECONDS === 0 && sessionHasEligibleTask) {
-            let vpm = parseFloat(valorPorMinutoInput.value) || 0;
-            vpm += INCREMENT_VALUE;
-            valorPorMinutoInput.value = vpm.toFixed(2);
-            if (typeof atualizarValorAcumulado === 'function') atualizarValorAcumulado();
-          }
-
-          if (typeof atualizarDisplay === 'function') atualizarDisplay();
+          syncTimer();
+          atualizarDisplay();
         }, 1000);
+        persistTimer();
 
         btnPlayPause.textContent = '⏸️ Pausar';
       } catch (e) {
@@ -1336,7 +1282,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const vpm = parseFloat(valorPorMinutoInput.value) || 0;
         if (vpm <= 0) return alert('Insira um valor válido por minuto antes de terminar.');
 
-        let valorTotal = typeof calcularValorTotal === 'function' ? calcularValorTotal(tempoSegundos, vpm) : (tempoSegundos / 60) * vpm;
+        let valorTotal = Economy.round(timerEarnedUnits / 6000);
 
         const multBonus = typeof getBonusEspecialMultiplier === 'function' ? getBonusEspecialMultiplier() : 1;
 
@@ -1353,13 +1299,15 @@ document.addEventListener('DOMContentLoaded', () => {
           atualizarSaldo();
         }
 
-        valorPorMinutoInput.value = 1;
+        valorPorMinutoInput.value = getEconomy().timer.base;
         contadorTarefasTimer = 0;
         somaIncrementosValorSessao = 0;
         baseMultiplicadorSessao = 1;
         timerEmSessao = false;
         sessionHasEligibleTask = false;
         tempoSegundos = 0;
+        timerEarnedUnits = 0;
+        persistTimer();
 
         if (typeof atualizarDisplay === 'function') atualizarDisplay();
         btnPlayPause.textContent = '▶️ Começar';
@@ -1370,6 +1318,21 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // -----------------------------
+  // Cross-ledger transactions update the legacy in-memory state before the next action.
+  window.addEventListener('wallet:credits', () => {
+    saldoDominadora = Number(AppStorage.getItem('saldoDominadora') || 0);
+    historico = JSON.parse(AppStorage.getItem('historico') || '[]');
+    tarefasBloqueadas = JSON.parse(AppStorage.getItem('tarefasBloqueadas') || '[]');
+    atualizarSaldo();
+    renderHistorico();
+    atualizarTarefasLimitadasUI();
+    atualizarBloqueiosNoSelectTarefa();
+  });
+  window.addEventListener('pagehide', () => {
+    AppStorage.setItem('tarefasBloqueadas', JSON.stringify(tarefasBloqueadas));
+    AppStorage.setItem('accelBoosts', JSON.stringify(accelBoosts));
+    AppStorage.flush();
+  });
   // INICIALIZAÇÃO
   // -----------------------------
   atualizarSaldo();
@@ -1431,7 +1394,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.__AppCtl.stopAccel();
         logOk('⚡ Aceleração cancelada via __AppCtl.stopAccel().');
       } else {
-        localStorage.setItem('accelBoosts', '[]');
+        AppStorage.setItem('accelBoosts', '[]');
         try {
           window.dispatchEvent(new CustomEvent('accel:stop-all'));
         } catch {}
@@ -1449,7 +1412,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.__AppCtl.setBlocks([]);
         logOk('🔓 Bloqueios removidos via __AppCtl.setBlocks([]).');
       } else {
-        localStorage.setItem('tarefasBloqueadas', '[]');
+        AppStorage.setItem('tarefasBloqueadas', '[]');
         logOk('🔓 Bloqueios removidos (fallback). Atualizando…');
         setTimeout(hardRefresh, 50);
       }
@@ -1464,8 +1427,8 @@ document.addEventListener('DOMContentLoaded', () => {
         window.__AppCtl.nukeAll();
         logWarn('🧨 Tudo limpo via __AppCtl.nukeAll().');
       } else {
-        localStorage.setItem('accelBoosts', '[]');
-        localStorage.setItem('tarefasBloqueadas', '[]');
+        AppStorage.setItem('accelBoosts', '[]');
+        AppStorage.setItem('tarefasBloqueadas', '[]');
         logWarn('🧨 Tudo limpo (fallback). Atualizando…');
         setTimeout(hardRefresh, 50);
       }

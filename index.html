@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/bonusAtivoGPT.css" />
     <link rel="stylesheet" href="css/luzLateral.css" />
+    <link rel="stylesheet" href="css/modern.css" />
   </head>
   <body>
     <!-- Splash / Loading overlay -->
@@ -30,198 +31,481 @@
 
     <div class="container">
       <h1 id="simuladorTitulo">Findom Wallet</h1>
-
-      <div class="section">
-        <div id="bonusActiveBanner">
-          <span class="bonus-text">BÔNUS 15% CRÉDITO</span>
-          <span class="bonus-icon">✨</span>
-        </div>
-        <div id="bonusActiveBanner">
-          <span class="bonus-text">DESCONTO 15% COMPRAS</span>
-          <span class="bonus-icon">💥</span>
-        </div>
-
-        <!-- cabeçalho com título + botão do contrato à direita -->
-        <div class="section-header">
-          <h2>Controle de Saldo</h2>
-          <button id="abrirContrato" class="icon-btn" title="Abrir contrato" onclick="window.open('💎 Contrato de Submissão e Resgate de Saldo.pdf','_blank')">📜</button>
-        </div>
-
-        <!-- saldo em linha com o rótulo -->
-        <div class="saldo-row">
-          <label class="saldo-label">Saldo Dominadora:</label>
-          <span id="saldoDominadora" class="saldo-badge">0,00</span>
-        </div>
-
-        <!-- ações -->
+      <p class="hint">Simulador consensual com créditos fictícios · finanças pessoais em um espaço separado.</p>
+      <div id="updateBanner" class="notice" role="status" hidden>
+        <span id="updateVersion">Nova versão disponível</span>
         <div class="btn-row">
-          <button type="button" id="resetSaldo">Resetar Saldo</button>
-          <button type="button" id="limparHistorico">Limpar Histórico</button>
-        </div>
-
-        <div class="controle-saldo">
-          <div class="bonus-especial-toggle">
-            <label>
-              <input type="checkbox" id="bonusEspecialCheckbox" />
-              Bônus - lingerie
-            </label>
-          </div>
+          <button type="button" id="updateNow">Atualizar agora</button>
+          <button type="button" id="updateLater" class="subtle-btn">Mais tarde</button>
         </div>
       </div>
-
-      <div class="section">
-        <h2>🎯 Tarefas Pendentes</h2>
-        <div id="tarefasPendentes">
-          <p style="color: #999; text-align: center" id="noTasksMessage">Nenhuma tarefa pendente. 👑</p>
+      <div id="storageWarning" role="alert" hidden></div>
+      <div class="summary-grid" aria-label="Resumo do aplicativo">
+        <div class="metric">
+          <span>Saldo fictício · créditos</span>
+          <strong id="homeCredits">0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Total registrado · reais</span>
+          <strong id="homeTotal">0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Compras pendentes · reais</span>
+          <strong id="homePending">R$ 0,00</strong>
+        </div>
+        <div class="metric">
+          <span>Orçamento restante</span>
+          <strong id="homeRemaining">R$ 0,00</strong>
         </div>
       </div>
-
-      <div class="section" id="tarefasLimitadasSection">
-        <h2>⏳ Tarefas com Limite Ativo</h2>
-        <div id="tarefasLimitadasLista">
-          <p style="color: #aaa">Nenhuma tarefa limitada ativa.</p>
-          <span class="tempo-restante" data-expira="1699999999999"></span>
-        </div>
-      </div>
-
-      <div id="aceleracoesAtivas"></div>
-
-      <div class="section">
-        <h2>Nova Transação</h2>
-
-        <label>Tipo de operação:</label>
-        <select id="tipoTransacao">
-          <option value="gasto">Compra de Serviço 📉</option>
-          <option value="ganho">Ganho de Crédito 📈</option>
-        </select>
-
-        <div id="compraFields">
-          <label>Tarefa (Compra):</label>
-          <select id="selectTarefa">
-            <option value="0" data-placeholder="1">-- Escolher tarefa --</option>
-            <option value="1500|Tirar cravos|Aturar tudo mesmo que doa">Tirar cravos — R$ 1.500</option>
-            <option value="3000|Vale escolher filme/série|Proibido Ásia">Vale escolher filme/série 🚫🇰🇷 — R$ 3.000</option>
-            <option value="3500|Massagem nos pés|Sem creme se tiver chulé">Massagem nos pés — R$ 3.500</option>
-            <option value="4000|Café da manhã na cama|Servir na cama">Café da manhã na cama — R$ 4.000</option>
-            <option value="4500|Lavar os pés e esfoliar.|Ficar no chão">Lavar os pés e esfoliar — R$ 4.500</option>
-            <option value="5000|Massagem|Relaxamento profundo">Massagem — R$ 5.000</option>
-            <option value="6000|Cozinhar jantar|Dominado à disposição durante o jantar">Cozinhar jantar (cada amiga - R$ 500) — R$ 6.000</option>
-            <option value="6500|Vale sair sozinha com amiga|Liberdade social">Vale sair sozinha com amiga — R$ 6.500</option>
-            <option value="6500|Obrigação de servir (2 tarefas)|Intensifica sensação de controle">Obrigação de servir (2 tarefas) — R$ 6.500</option>
-            <option value="12250|Vale de escolha de FILME|Permitido Ásia">Vale escolher FILME ✔️🇰🇷 — R$ 12.250</option>
-            <option value="15000|Ela decide toda a agenda do dia|Dominado obedece tudo">Ela decide toda a agenda do dia — R$ 15.000</option>
-            <option value="25000|Ganha 60 dólares na vida real|Dominado compra tudo ate 60 dólares">Ganha 60 dólares na vida real — R$ 25.000</option>
-            <!-- Opções que reduzem o tempo dos bloqueios ativos -->
-            <optgroup label="👑 Redução de Limite 👑">
-              <option value="2000|REDUZIR_BLOQUEIO_6H|Aceleração ⏳ (Reduz 6h por 1mins)" data-reduz-horas="6">Reduzir 6h ⌛ — R$ 2.000</option>
-              <option value="3500|REDUZIR_BLOQUEIO_12H|Aceleração ⏳ (Reduz 12h por 1mins)" data-reduz-horas="12">Reduzir 12h ⌛ — R$ 3.500</option>
-              <option value="6000|REDUZIR_BLOQUEIO_1D|Aceleração ⏳ (Reduz 1d por 1mins)" data-reduz-horas="24">Reduzir 1 dia ⌛ — R$ 6.000</option>
-              <option value="11000|REDUZIR_BLOQUEIO_3D|Aceleração ⏳ (Reduz 3d por 1mins)" data-reduz-horas="72">Reduzir 3 dias ⌛ — R$ 11.000</option>
-              <option value="18000|ACELERAR_GLOBAL_4D_1H|Aceleração ⏳ (Reduz 4d por 1mins)">Reduzir 4 dias ⌛ — R$ 18.000</option>
-            </optgroup>
+      <nav class="app-nav" aria-label="Seções">
+        <button type="button" data-panel="simulator" aria-pressed="true">Simulador</button>
+        <button type="button" data-panel="financePanel" aria-pressed="false">Controle Financeiro</button>
+        <button type="button" data-panel="backupPanel" aria-pressed="false">Configurações</button>
+      </nav>
+      <main id="simulator" class="app-panel">
+        <nav class="quick-nav" aria-label="Atalhos do simulador">
+          <button type="button" data-jump="ganho">Ganhar créditos</button>
+          <button type="button" data-jump="gasto">Loja de serviços</button>
+          <button type="button" data-jump="roleta">Roleta</button>
+        </nav>
+        <section class="section">
+          <h2>Economia do simulador</h2>
+          <label for="economyMode">Modo econômico</label>
+          <select id="economyMode">
+            <option value="classic">Clássico · valores originais</option>
+            <option value="balanced">Equilibrado · progressão moderada</option>
+            <option value="custom">Personalizado</option>
           </select>
+          <p id="timerLimits" class="hint"></p>
+          <details id="customEconomy" hidden>
+            <summary>Editar preços, ganhos e limites</summary>
+            <p class="hint">Edite os valores em créditos no JSON. Campos devem ser positivos, com até duas casas decimais. O histórico já registrado mantém seus valores.</p>
+            <label for="customEconomyJson">Configuração personalizada</label>
+            <textarea id="customEconomyJson" spellcheck="false"></textarea>
+            <button id="saveCustomEconomy" type="button">Salvar configuração</button>
+          </details>
+        </section>
 
-          <label>Descrição:</label>
-          <input type="text" id="descricaoTransacao" readonly />
-        </div>
-
-        <div id="ganhoFields" style="display: none">
-          <label>Como ganhou crédito:</label>
-          <select id="selectGanho" onchange="calcularValorGanho()">
-            <option value="">-- Escolher forma --</option>
-            <option value="Tapa de pé na cara">Tapa de pé na cara R$ 2,00</option>
-            <option value="Dedo do meio com desprezo">Dedo do meio com desprezo R$ 30,00</option>
-            <option value="Peidar na cara">Peidar na cara R$ 150,00</option>
-            <option value="Dar uma meleca para comer">Dar uma meleca para comer R$ 200,00</option>
-            <option value="Chupar buceta">Chupar buceta R$ 200,00</option>
-            <option value="Cuspir na cara">Cuspir na cara R$ 320,00</option>
-            <option value="Mijar na boca">Mijar na boca R$ 380,00</option>
-            <option value="Chupar peito">Chupar peito R$ 500,00</option>
-            <option value="Comer cutícula e peles dos pés">Comer cutícula e peles dos pés R$ 800,00</option>
-            <option value="Pés na cara">Pés na cara - R$ 400,00</option>
-            <option value="Cuspir porra (Sêmen) na boca">Cuspir porra (Sêmen) na boca R$ 2000,00</option>
-            <option value="Vestir cinta e comer dominado">Vestir cinta e comer dominado R$ 3500,00</option>
-            <option value="Match Masters">Match Masters</option>
-            <!-- <option value="Buraco">Conversar no grupo sobre sair ou planejar comida compartilhado na TV 💲</option> -->
-            <option value="Videogames Competitivos">Videogames Competitivos 💲</option>
-            <option value="Buraco">Buraco 💲</option>
-            <option value="Perfil">Perfil 💲</option>
-            <option value="Jogos de tabuleiro com amigas">Jogos de tabuleiro com amigas 💲</option>
-            <option value="Outro">Outro (Valor editável)</option>
-          </select>
-
-          <label>
-            Valor (R$):
-            <input type="number" id="valorGanho" value="0" step="1" />
-          </label>
-
-          <div id="pesNaCaraOptions" class="checkbox-group" style="display: none">
-            <label>
-              <input type="checkbox" id="chkChule" data-value="400" onchange="calcularValorGanho()" />
-              Pés com chulé (+ R$ 400)
-            </label>
-            <label>
-              <input type="checkbox" id="chkFrancesinha" data-value="300" onchange="calcularValorGanho()" />
-              Francesinha (+ R$ 300)
-            </label>
+        <div class="section">
+          <div class="bonusActiveBanner">
+            <span class="bonus-text">BÔNUS 15% CRÉDITO</span>
+            <span class="bonus-icon">✨</span>
+          </div>
+          <div class="bonusActiveBanner">
+            <span class="bonus-text">DESCONTO 15% COMPRAS</span>
+            <span class="bonus-icon">💥</span>
           </div>
 
-          <div id="comCatarro" class="checkbox-group" style="display: none">
-            <label>
-              <input type="checkbox" id="chkCatarro" data-value="500" onchange="calcularValorGanho()" />
-              Cuspe com Catarro (+ R$ 500)
-            </label>
+          <!-- cabeçalho com título + botão do contrato à direita -->
+          <div class="section-header">
+            <h2>Saldo fictício</h2>
+            <button id="abrirContrato" class="icon-btn" title="Abrir contrato" onclick="window.open('💎 Contrato de Submissão e Resgate de Saldo.pdf', '_blank')">📜</button>
           </div>
 
-          <label id="labelQuantidadeMultiplicador" style="display: none; margin-top: 12px">Quantidade (multiplicador):</label>
-          <input type="number" id="quantidadeMultiplicador" value="1" min="1" style="display: none; margin-top: 8px" onchange="calcularValorGanho()" />
+          <!-- saldo em linha com o rótulo -->
+          <div class="saldo-row">
+            <label class="saldo-label">Saldo Dominadora:</label>
+            <span id="saldoDominadora" class="saldo-badge">0,00</span>
+          </div>
 
-          <div id="contadorBloco" style="background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #444; margin-top: 20px">
-            <label>Valor por minuto (R$):</label>
-            <input type="number" id="valorPorMinuto" value="0" min="1" step="1" readonly />
+          <!-- ações -->
+          <div class="btn-row">
+            <button type="button" id="resetSaldo">Resetar Saldo</button>
+            <button type="button" id="limparHistorico">Limpar Histórico</button>
+          </div>
 
-            <div id="contadorContainer" style="margin-top: 12px">
-              <span style="margin-right: 15px; font-size: 17px">
-                Tempo:
-                <strong id="tempoDisplay">00:00</strong>
-              </span>
-              <span style="font-size: 17px">
-                Valor:
-                <strong id="valorAcumuladoDisplay" style="color: #50b050">R$ 0,00</strong>
-              </span>
-              <button id="btnPlayPauseTempo">▶️ Começar</button>
-              <button id="btnTerminarTempo">⏹️ Calcular</button>
+          <div class="controle-saldo">
+            <div class="bonus-especial-toggle">
+              <label>
+                <input type="checkbox" id="bonusEspecialCheckbox" />
+                Bônus - lingerie
+              </label>
             </div>
           </div>
         </div>
 
-        <button id="adicionar">Registrar</button>
-      </div>
-
-      <div class="section">
-        <!-- ... -->
-        <h2>Histórico de Transações</h2>
-
-        <label>Filtrar por dia:</label>
-        <input type="date" id="filterDate" />
-        <div style="display: flex; gap: 10px; margin-top: 8px">
-          <button id="aplicarFiltro" style="background: #b8860b; color: #1e1e1e">Filtrar</button>
-          <button id="limparFiltro" style="background: #444; color: #ccc">Limpar</button>
+        <div class="section">
+          <h2>🎯 Tarefas Pendentes</h2>
+          <div id="tarefasPendentes">
+            <p style="color: #999; text-align: center" id="noTasksMessage">Nenhuma tarefa pendente. 👑</p>
+          </div>
         </div>
 
-        <div id="historico"></div>
-        <button id="enviarHistoricoWhatsApp" style="background: #1e90ff; color: white; border-radius: 8px; border: none; margin-top: 10px">Enviar histórico por WhatsApp</button>
-        <!-- ... -->
-      </div>
+        <div class="section" id="tarefasLimitadasSection">
+          <h2>⏳ Tarefas com Limite Ativo</h2>
+          <div id="tarefasLimitadasLista">
+            <p style="color: #aaa">Nenhuma tarefa limitada ativa.</p>
+            <span class="tempo-restante" data-expira="1699999999999"></span>
+          </div>
+        </div>
+
+        <div id="aceleracoesAtivas"></div>
+        <section class="section" id="rouletteSection">
+          <h2>Roleta e recompensas</h2>
+          <p class="hint">19 setores · uma rodada a cada 3 dias. Serviços e redutores sorteados são gratuitos e devem ser resgatados abaixo. Ofertas de benefício real exigem créditos e aprovação. O botão 🎰 abre a roleta.</p>
+          <div id="roulettePrizeList"></div>
+        </section>
+
+        <div class="section">
+          <h2 id="transactionTitle">Nova Transação</h2>
+
+          <label>Tipo de operação:</label>
+          <select id="tipoTransacao">
+            <option value="gasto">Compra de Serviço 📉</option>
+            <option value="ganho">Ganho de Crédito 📈</option>
+          </select>
+
+          <div id="compraFields">
+            <label>Tarefa (Compra):</label>
+            <select id="selectTarefa">
+              <option value="0" data-placeholder="1">-- Escolher tarefa --</option>
+
+              <!-- Opções que reduzem o tempo dos bloqueios ativos -->
+              <optgroup label="👑 Redução de Limite 👑"></optgroup>
+            </select>
+
+            <label>Descrição:</label>
+            <input type="text" id="descricaoTransacao" readonly />
+          </div>
+
+          <div id="ganhoFields" style="display: none">
+            <label>Como ganhou crédito:</label>
+            <select id="selectGanho" onchange="calcularValorGanho()">
+              <option value="">-- Escolher forma --</option>
+
+              <option value="Match Masters">Match Masters</option>
+              <!-- <option value="Buraco">Conversar no grupo sobre sair ou planejar comida compartilhado na TV 💲</option> -->
+              <option value="Videogames Competitivos">Videogames Competitivos 💲</option>
+              <option value="Buraco">Buraco 💲</option>
+              <option value="Perfil">Perfil 💲</option>
+              <option value="Jogos de tabuleiro com amigas">Jogos de tabuleiro com amigas 💲</option>
+              <option value="Outro">Outro (Valor editável)</option>
+            </select>
+
+            <label>
+              Valor (créditos):
+              <input type="number" id="valorGanho" value="0" step="0.01" min="0.01" />
+            </label>
+
+            <div id="pesNaCaraOptions" class="checkbox-group" style="display: none">
+              <label>
+                <input type="checkbox" id="chkChule" data-value="400" onchange="calcularValorGanho()" />
+                Pés com chulé (+ R$ 400)
+              </label>
+              <label>
+                <input type="checkbox" id="chkFrancesinha" data-value="300" onchange="calcularValorGanho()" />
+                Francesinha (+ R$ 300)
+              </label>
+            </div>
+
+            <div id="comCatarro" class="checkbox-group" style="display: none">
+              <label>
+                <input type="checkbox" id="chkCatarro" data-value="500" onchange="calcularValorGanho()" />
+                Cuspe com Catarro (+ R$ 500)
+              </label>
+            </div>
+
+            <label id="labelQuantidadeMultiplicador" style="display: none; margin-top: 12px">Quantidade (multiplicador):</label>
+            <input type="number" id="quantidadeMultiplicador" value="1" min="1" style="display: none; margin-top: 8px" onchange="calcularValorGanho()" />
+
+            <div id="contadorBloco" style="background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #444; margin-top: 20px">
+              <label>Créditos por minuto:</label>
+              <input type="number" id="valorPorMinuto" value="0" min="0.01" step="0.01" readonly />
+
+              <div id="contadorContainer" style="margin-top: 12px">
+                <span style="margin-right: 15px; font-size: 17px">
+                  Tempo:
+                  <strong id="tempoDisplay">00:00</strong>
+                </span>
+                <span style="font-size: 17px">
+                  Valor:
+                  <strong id="valorAcumuladoDisplay" style="color: #50b050">R$ 0,00</strong>
+                </span>
+                <button id="btnPlayPauseTempo">▶️ Começar</button>
+                <button id="btnTerminarTempo">⏹️ Calcular</button>
+              </div>
+            </div>
+          </div>
+
+          <button id="adicionar">Registrar</button>
+        </div>
+
+        <div class="section">
+          <!-- ... -->
+          <h2>Histórico de Transações</h2>
+
+          <label>Filtrar por dia:</label>
+          <input type="date" id="filterDate" />
+          <div style="display: flex; gap: 10px; margin-top: 8px">
+            <button id="aplicarFiltro" style="background: #b8860b; color: #1e1e1e">Filtrar</button>
+            <button id="limparFiltro" style="background: #444; color: #ccc">Limpar</button>
+          </div>
+
+          <div id="historico"></div>
+          <button id="enviarHistoricoWhatsApp" style="background: #1e90ff; color: white; border-radius: 8px; border: none; margin-top: 10px">Enviar histórico por WhatsApp</button>
+          <!-- ... -->
+        </div>
+      </main>
+      <section id="financePanel" class="app-panel" hidden>
+        <div class="section" id="redemptionsSection">
+          <h2>Resgates e benefícios reais</h2>
+          <p class="hint">Solicitar reserva créditos. Aprovar não gera despesa. Concluir registra um pagamento ocorrido; cancelar/estornar devolve os créditos uma única vez. O aplicativo não faz transferências.</p>
+          <label>
+            Créditos para converter
+            <input id="redemptionCredits" type="number" min="1" step="0.01" value="100" />
+          </label>
+          <p id="redemptionQuote" class="notice"></p>
+          <button type="button" id="requestRedemption">Solicitar resgate</button>
+          <p id="redemptionMessage" role="status"></p>
+          <div id="redemptionList"></div>
+        </div>
+        <div class="section">
+          <h2>Controle Financeiro</h2>
+          <p class="hint">Registros pessoais independentes dos créditos fictícios. Salário é uma categoria de gasto/compromisso nesta lista. Valores somente em dólar ficam separados.</p>
+          <div id="financeMessage" role="status" aria-live="polite"></div>
+          <div class="form-grid">
+            <label>
+              Orçamento total (R$)
+              <input id="financeBudget" inputmode="decimal" placeholder="0,00" value="0,00" />
+            </label>
+            <button type="button" id="saveBudget">Salvar orçamento</button>
+          </div>
+          <p id="financeTotals" class="notice"></p>
+          <h3>Registros por categoria · filtro atual</h3>
+          <div id="categoryTotals"></div>
+        </div>
+        <div class="section">
+          <h2 id="entryTitle">Novo lançamento</h2>
+          <form id="entryForm">
+            <div class="form-grid">
+              <label>
+                Categoria
+                <select id="entryCategory" required></select>
+              </label>
+              <label>
+                Loja / estabelecimento
+                <input id="entryStore" maxlength="200" placeholder="Ex.: Loja Aurora" />
+              </label>
+              <label>
+                Descrição
+                <input id="entryDescription" required maxlength="1000" placeholder="Ex.: Compra (1)" />
+              </label>
+              <label>
+                Data
+                <input id="entryDate" type="date" />
+              </label>
+              <label>
+                Valor original
+                <input id="entryAmount" inputmode="decimal" required placeholder="1.198,52" />
+              </label>
+              <label>
+                Moeda
+                <select id="entryCurrency">
+                  <option value="BRL">Reais · BRL</option>
+                  <option value="USD">Dólares · USD</option>
+                </select>
+              </label>
+              <label>
+                Situação
+                <select id="entryStatus">
+                  <option value="paid">Pago ✅</option>
+                  <option value="pending">Pendente ❌</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="refunded">Reembolsado</option>
+                </select>
+              </label>
+            </div>
+            <p id="entryOrigin" class="hint"></p>
+            <button type="submit" id="saveEntry">Registrar lançamento</button>
+            <button type="button" id="cancelEdit" class="subtle-btn" hidden>Cancelar edição</button>
+          </form>
+        </div>
+        <div class="section">
+          <h2>Importar lista ou comprovante</h2>
+          <details>
+            <summary>Colar lista do WhatsApp</summary>
+            <label>
+              Data para itens sem data
+              <input type="date" id="importDate" />
+            </label>
+            <label>
+              Lista original
+              <textarea id="whatsappInput" placeholder="Cole sua lista aqui. Ela ficará somente neste navegador."></textarea>
+            </label>
+            <button type="button" id="previewImport">Analisar e mostrar prévia</button>
+          </details>
+          <details>
+            <summary>Ler imagem ou PDF com OCR local</summary>
+            <p class="hint">Até 12 MB e 10 páginas. A leitura acontece neste dispositivo. Nenhum comprovante é enviado ou salvo. A primeira leitura pode demorar para carregar o motor.</p>
+            <label>
+              Comprovante
+              <input id="receiptFile" type="file" accept="image/png,image/jpeg,image/webp,image/bmp,application/pdf" />
+            </label>
+            <button type="button" id="processReceipt">Ler comprovante</button>
+            <p id="ocrProgress" role="status" aria-live="polite"></p>
+            <label>
+              Texto reconhecido (pode corrigir)
+              <textarea id="receiptText"></textarea>
+            </label>
+            <button type="button" id="suggestReceipt">Preparar sugestão pelo texto</button>
+            <div id="receiptWarnings" class="notice" hidden></div>
+          </details>
+          <div id="importPreview" hidden>
+            <h3>Prévia · confira antes de salvar</h3>
+            <div id="importWarnings" class="notice"></div>
+            <div id="importRows" class="scroll-area"></div>
+            <button type="button" id="confirmImport">Confirmar itens selecionados</button>
+            <button type="button" id="cancelImport" class="subtle-btn">Descartar prévia</button>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Histórico financeiro</h2>
+          <div class="filters">
+            <label>
+              De
+              <input id="financeFrom" type="date" />
+            </label>
+            <label>
+              Até
+              <input id="financeTo" type="date" />
+            </label>
+            <label>
+              Categoria
+              <select id="financeCategory"></select>
+            </label>
+            <label>
+              Loja
+              <input id="financeStore" placeholder="Todas as lojas" />
+            </label>
+            <label>
+              Situação
+              <select id="financeStatus">
+                <option value="">Todas</option>
+                <option value="paid">Pago</option>
+                <option value="pending">Pendente</option>
+                <option value="cancelled">Cancelado</option>
+                <option value="refunded">Reembolsado</option>
+              </select>
+            </label>
+          </div>
+          <button type="button" id="clearFinanceFilters" class="subtle-btn">Limpar filtros</button>
+          <div id="financeHistory"></div>
+          <details>
+            <summary>Resumo para WhatsApp</summary>
+            <p class="hint">O resumo acompanha os filtros e usa o orçamento total informado. Copie e escolha com quem compartilhar.</p>
+            <label>
+              Resumo
+              <textarea id="shareText" readonly></textarea>
+            </label>
+            <button type="button" id="copySummary">Copiar resumo</button>
+          </details>
+          <details>
+            <summary>Registro de correções</summary>
+            <div id="financeAudit"></div>
+          </details>
+        </div>
+      </section>
+      <dialog id="completionDialog">
+        <form id="completionForm">
+          <h2>Confirmar pagamento do resgate</h2>
+          <p class="hint">Preencha o valor efetivamente pago. Você pode usar reais mesmo quando o benefício foi cotado em dólares.</p>
+          <label>
+            Valor pago
+            <input id="completionAmount" required inputmode="decimal" />
+          </label>
+          <label>
+            Moeda
+            <select id="completionCurrency">
+              <option value="BRL">BRL</option>
+              <option value="USD">USD</option>
+            </select>
+          </label>
+          <label>
+            Data
+            <input id="completionDate" type="date" required />
+          </label>
+          <label>
+            Estabelecimento
+            <input id="completionStore" maxlength="200" />
+          </label>
+          <label>
+            Categoria
+            <select id="completionCategory"></select>
+          </label>
+          <p id="completionError" role="alert"></p>
+          <button type="submit">Confirmar pagamento ocorrido</button>
+          <button type="button" id="cancelCompletion">Cancelar</button>
+        </form>
+      </dialog>
+      <section id="backupPanel" class="app-panel section" hidden>
+        <h2>Configurações e backup</h2>
+        <button type="button" id="checkUpdate">Verificar atualização</button>
+        <details>
+          <summary>Conversão, benefícios e limites de resgate</summary>
+          <p class="hint">
+            Resgates começam desativados. Configure a conversão em centavos reais por crédito. Zero desativa um limite opcional. Orçamentos incluem reservas e resgates concluídos na moeda indicada. Alterações não recalculam solicitações antigas.
+          </p>
+          <label>
+            <input id="redemptionEnabled" type="checkbox" />
+            Habilitar solicitações de resgate
+          </label>
+          <div class="form-grid">
+            <label>
+              Centavos de real por crédito
+              <input id="conversionRate" type="number" min="1" step="1" />
+            </label>
+            <label>
+              Mínimo de créditos
+              <input id="redemptionMin" type="number" min="1" step="1" />
+            </label>
+            <label>
+              Máximo de créditos por resgate (0 = livre)
+              <input id="redemptionMax" type="number" min="0" step="1" />
+            </label>
+            <label>
+              Máximo de solicitações abertas (0 = livre)
+              <input id="redemptionMaxOpen" type="number" min="0" step="1" />
+            </label>
+            <label>
+              Orçamento de resgates BRL (0 = livre)
+              <input id="redemptionBudget" inputmode="decimal" />
+            </label>
+            <label>
+              Orçamento de resgates USD (0 = livre)
+              <input id="redemptionUsdBudget" inputmode="decimal" />
+            </label>
+          </div>
+          <button type="button" id="saveRedemptionRules">Salvar regras de resgate</button>
+        </details>
+        <p>Os dados são salvos neste navegador e neste endereço do site. Exporte regularmente um backup privado para evitar perda ao limpar o navegador ou trocar de dispositivo.</p>
+        <p class="hint">O backup JSON contém o simulador, bloqueios, bônus, roleta, sessão pausada, configuração e os registros financeiros. Ele contém dados pessoais: guarde em local privado. Não há sincronização automática entre dispositivos.</p>
+        <button type="button" id="exportBackup">Baixar backup JSON completo</button>
+        <label>
+          Restaurar backup JSON
+          <input type="file" id="backupFile" accept="application/json,.json" />
+        </label>
+        <button type="button" id="previewBackup">Conferir backup</button>
+        <div id="backupPreview" class="notice" hidden></div>
+        <button type="button" id="confirmBackup" hidden>Confirmar substituição dos dados locais</button>
+        <p id="backupMessage" role="status"></p>
+      </section>
+      <footer>Findom Wallet · dados no dispositivo · créditos fictícios e reais separados</footer>
     </div>
 
     <!-- Camada das chamas -->
     <canvas id="fx-embers" aria-hidden="true"></canvas>
 
-    <script defer src="js/luzLateral.js"></script>
-    <script defer src="js/splashAmimacao.js"></script>
+    <script defer src="js/vault.js"></script>
+    <script defer src="js/economy-config.js"></script>
+    <script defer src="js/finance.js"></script>
+    <script defer src="js/persistence.js"></script>
+    <script defer src="js/economy.js"></script>
+    <script defer src="js/economy-ui.js"></script>
     <script defer src="js/storage.js"></script>
     <script defer src="js/utils.js"></script>
+    <script defer src="js/luzLateral.js"></script>
+    <script defer src="js/splashAmimacao.js"></script>
     <script defer src="js/bonusEspecial.js"></script>
     <script defer src="js/ganhoFixo.js"></script>
     <script defer src="js/tarefasPendentes.js"></script>
@@ -230,8 +514,14 @@
     <script defer src="js/efeitoBonusAtivoGanhoCredito.js"></script>
     <script defer src="js/efeitoBonusAtivoCompraServico.js"></script>
     <script defer src="js/chovendoGrana.js"></script>
-    <!-- <script defer src="js/AA_testeCodigoDiff.js"></script> -->
-    <script src="js/appMain.js"></script>
-    <script src="js/roleta.js"></script>
+    <script defer src="js/appMain.js"></script>
+    <script defer src="js/roleta.js"></script>
+    <script defer src="js/roulette-rewards.js"></script>
+    <script defer src="js/receipt.js"></script>
+    <script defer src="js/ocr.js"></script>
+    <script defer src="js/finance-ui.js"></script>
+    <script defer src="js/redemptions.js"></script>
+    <script defer src="js/redemptions-ui.js"></script>
+    <script defer src="js/backup.js"></script>
   </body>
 </html>

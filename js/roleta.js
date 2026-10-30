@@ -10,7 +10,7 @@
   // ==========================
   const STORAGE_KEY_DATA = 'roletaUltimoUso';
   const STORAGE_KEY_RESULT_TEXT = 'roletaUltimoResultadoTexto';
-  const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 dias
+  const COOLDOWN_MS = Economy.config.rouletteCooldownMs; // 3 dias
 
   // ==========================
   // SONS
@@ -25,14 +25,14 @@
   // FUNÇÕES DE TEMPO / COOLDOWN
   // ==========================
   function getLastUso() {
-    const v = localStorage.getItem(STORAGE_KEY_DATA);
+    const v = AppStorage.getItem(STORAGE_KEY_DATA);
     if (!v) return null;
     const n = Number(v);
     return new Date(n);
   }
 
   function marcarUso() {
-    localStorage.setItem(STORAGE_KEY_DATA, String(Date.now()));
+    AppStorage.setItem(STORAGE_KEY_DATA, String(Date.now()));
   }
 
   function msRestantes() {
@@ -58,63 +58,40 @@
   // LISTA DE PRÊMIOS (19 setores)
   // ==========================
 
-  const setores = [
-    // ORGASMOS / MIMO / SERVIÇO
-    { icon: '👙', label: 'LING', full: 'Ativar bônus lingerie hoje', cor: '#ffd27f' }, // amarelo
-    { icon: '🧼', label: 'CRAV', full: 'Tirar cravos — R$1.500', cor: '#b0ff8a' }, // verde
-    { icon: '🎬🚫🇰🇷', label: 'NO-KOR', full: 'Filme proibido 🇰🇷 — R$3.000', cor: '#8de8ff' }, // azul
-    { icon: '🦶', label: 'PÉS', full: 'Massagem nos pés — R$3.500', cor: '#ffb3e6' }, // rosa
-
-    { icon: '☕', label: 'CAFÉ', full: 'Café na cama — R$4.000', cor: '#ffd27f' }, // amarelo
-    { icon: '🧽', label: 'LAV', full: 'Lavar/esfoliar os pés — R$4.500', cor: '#b0ff8a' }, // verde
-    { icon: '💆', label: 'MASS', full: 'Massagem — R$5.000', cor: '#8de8ff' }, // azul
-    { icon: '🍳', label: 'JANT', full: 'Cozinhar jantar — R$6.000', cor: '#ffb3e6' }, // rosa
-
-    { icon: '💃', label: 'SAIR', full: 'Sair com amiga — R$6.500', cor: '#ffd27f' }, // amarelo
-    { icon: '🛎️', label: 'SERV', full: 'Servir (2 tarefas) — R$6.500', cor: '#b0ff8a' }, // verde
-    { icon: '🎬🇰🇷', label: 'K-OK', full: 'Filme 🇰🇷 permitido — R$12.250', cor: '#8de8ff' }, // azul
-    { icon: '👑', label: 'DIA', full: 'Decide a agenda do dia — R$15.000', cor: '#ffb3e6' }, // rosa
-
-    { icon: '💵', label: '60', full: 'Ganha US$60 — R$25.000', cor: '#ffd27f' }, // amarelo
-
-    // REDUTORES DE TEMPO
-    { icon: '⌛', label: '-6H', full: 'Reduzir 6h — R$2.000', cor: '#b0ff8a' }, // verde
-    { icon: '⌛', label: '-12H', full: 'Reduzir 12h — R$3.500', cor: '#8de8ff' }, // azul
-    { icon: '📅', label: '-1D', full: 'Reduzir 1 dia — R$6.000', cor: '#ffb3e6' }, // rosa
-    { icon: '📅', label: '-3D', full: 'Reduzir 3 dias — R$11.000', cor: '#ffd27f' }, // amarelo
-    { icon: '📅', label: '-4D', full: 'Reduzir 4 dias — R$18.000', cor: '#b0ff8a' }, // verde
-
-    // CASTIGO
-    { icon: '😈', label: 'NADA', full: 'Nada hoje 😈', cor: '#8de8ff' }, // azul
-  ];
+  const setores = Economy.config.roulette.map((sector) => ({ ...sector, full: sector.label }));
+  function refreshPrizeLabels() {
+    for (const s of setores) {
+      const service = Economy.config.services.find((item) => item.id === s.serviceId);
+      s.full =
+        s.kind === 'bonus'
+          ? 'Bônus lingerie por ' + Economy.config.bonusDurationHours + 'h'
+          : s.kind === 'none'
+            ? 'Nada hoje'
+            : s.kind === 'offer'
+              ? 'Oferta de benefício real: ' + service.label + ' · ' + getEconomy().prices[service.id] + ' créditos'
+              : (s.kind === 'reducer' ? 'Redutor gratuito: ' : 'Serviço gratuito: ') + service.label + ' · valor de catálogo ' + getEconomy().prices[service.id] + ' créditos';
+    }
+  }
+  function settleSpin(spin) {
+    const saved = JSON.parse(AppStorage.getItem('rouletteSpin') || 'null');
+    if (!saved || saved.id !== spin.id || saved.settled) return;
+    refreshPrizeLabels();
+    const prize = setores[saved.index];
+    const awards = JSON.parse(AppStorage.getItem('rouletteAwards') || '[]');
+    if (!awards.some((a) => a.id === saved.id))
+      awards.push({ id: saved.id, sector: saved.index, label: prize.full, kind: prize.kind, serviceId: prize.serviceId, claimed: prize.kind === 'none' || prize.kind === 'offer', createdAt: new Date().toISOString() });
+    AppStorage.setItem('rouletteAwards', JSON.stringify(awards));
+    AppStorage.setItem('rouletteSpin', JSON.stringify({ ...saved, settled: true }));
+    salvarResultado(prize.full);
+    window.dispatchEvent(new Event('roulette:awards'));
+  }
 
   // Chances relativas de cada prêmio (% da sua tabela)
   // chave = label do setor
-  const CHANCES_POR_LABEL = {
-    CRAV: 16.58, // Tirar cravos
-    '-6H': 12.44, // Reduzir 6h
-    LING: 8.29, // Ativar bônus lingerie hoje
-    'NO-KOR': 8.29, // Vale escolher filme/série 🚫🇰🇷
-    PÉS: 7.11, // Massagem nos pés
-    '-12H': 7.11, // Reduzir 12h
-    CAFÉ: 6.22, // Café da manhã na cama
-    LAV: 5.53, // Lavar os pés e esfoliar
-    MASS: 4.98, // Massagem
-    JANT: 4.15, // Cozinhar jantar
-    '-1D': 4.15, // Reduzir 1 dia
-    NADA: 4.15, // Nada hoje 😈
-    SAIR: 3.83, // Vale sair sozinha com amiga
-    SERV: 3.83, // Obrigação de servir (2 tarefas)
-    '-3D': 2.26, // Reduzir 3 dias
-    'K-OK': 2.03, // Vale escolher FILME ✔️🇰🇷
-    DIA: 1.66, // Ela decide toda a agenda do dia
-    '-4D': 1.38, // Reduzir 4 dias
-    60: 0.99, // Ganha 60 dólares
-  };
 
   // se algum setor não estiver na tabela, cai aqui (peso = 1)
   function getPesoSetor(setor) {
-    return CHANCES_POR_LABEL[setor.label] ?? 1;
+    return getEconomy().rouletteWeights[setor.label] ?? setor.weight;
   }
 
   const TOTAL_SETORES = setores.length;
@@ -332,6 +309,8 @@
   // ====================================================
 
   function abrirModalRoleta(onFinish) {
+    if (document.getElementById('roletaBox') || msRestantes() > 0) return;
+    refreshPrizeLabels();
     const overlay = document.createElement('div');
     overlay.style = `
       position: fixed;
@@ -416,7 +395,7 @@
     });
 
     overlay.onclick = (ev) => {
-      if (ev.target === overlay) {
+      if (ev.target === overlay && !overlay.dataset.spinning) {
         overlay.remove();
         if (onFinish) onFinish();
       }
@@ -432,10 +411,17 @@
   let rotacaoAtual = 0;
 
   function girarRoleta(wheel, pointer, visor, overlay, onFinish) {
+    if (overlay.dataset.spinning || msRestantes() > 0) return;
+    overlay.dataset.spinning = '1';
+    document.getElementById('btnRoletaGirar').disabled = true;
     const setoresCount = TOTAL_SETORES;
     const angSetor = ANGULO;
 
     const indiceFinal = sortearIndicePorPeso();
+    const spin = { id: crypto.randomUUID(), index: indiceFinal, settled: false };
+    marcarUso();
+    AppStorage.setItem('rouletteSpin', JSON.stringify(spin));
+    AppStorage.flush();
 
     const anguloDoSetor = OFFSET + indiceFinal * angSetor + angSetor / 2;
 
@@ -453,22 +439,7 @@
 
     // Sorteia um índice de setor baseado nos pesos (chances)
     function sortearIndicePorPeso() {
-      // soma total dos pesos
-      const somaPesos = setores.reduce((acc, s) => acc + getPesoSetor(s), 0);
-
-      // número aleatório entre 0 e somaPesos
-      let r = Math.random() * somaPesos;
-
-      // varre os setores até achar em qual faixa caiu
-      for (let i = 0; i < setores.length; i++) {
-        r -= getPesoSetor(setores[i]);
-        if (r <= 0) {
-          return i;
-        }
-      }
-
-      // fallback defensivo (não deveria chegar aqui)
-      return setores.length - 1;
+      return Economy.drawRoulette(getEconomy());
     }
 
     // perto do fim, troca pra um balanço bem mais suave
@@ -489,7 +460,7 @@
 
       try {
         audioWhip.currentTime = 0;
-        audioWhip.play();
+        audioWhip.play().catch(() => {});
       } catch {}
 
       marcarUso();
@@ -521,7 +492,7 @@
       if (delta > 8) {
         try {
           audioTick.currentTime = 0;
-          audioTick.play();
+          audioTick.play().catch(() => {});
         } catch {}
       }
     }, 35);
@@ -535,7 +506,7 @@
 
   function salvarResultado(texto) {
     try {
-      localStorage.setItem(STORAGE_KEY_RESULT_TEXT, texto);
+      AppStorage.setItem(STORAGE_KEY_RESULT_TEXT, texto);
     } catch {}
 
     const span = obterAreaResultadoTexto();
@@ -546,7 +517,7 @@
   }
 
   function restaurarResultado() {
-    const texto = localStorage.getItem(STORAGE_KEY_RESULT_TEXT);
+    const texto = AppStorage.getItem(STORAGE_KEY_RESULT_TEXT);
     if (!texto) return;
 
     const span = obterAreaResultadoTexto();
@@ -692,6 +663,8 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     criarBotaoFlutuante();
+    const spin = JSON.parse(AppStorage.getItem('rouletteSpin') || 'null');
+    if (spin && !spin.settled) settleSpin(spin);
     restaurarResultado();
   });
 })();
