@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#8b0000" />
 
     <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/registro.css" />
     <link rel="stylesheet" href="css/bonusAtivoGPT.css" />
     <link rel="stylesheet" href="css/luzLateral.css" />
   </head>
@@ -69,6 +70,17 @@
         </div>
       </div>
 
+      <div class="section">
+        <h2>⚖️ Escala da economia fictícia</h2>
+        <label for="escalaEconomia">Proporção para novas transações:</label>
+        <select id="escalaEconomia">
+          <option value="0.05">5% — bem acessível</option>
+          <option value="0.1">10% — equilibrada (padrão)</option>
+          <option value="0.2">20% — intermediária</option>
+          <option value="1">100% — valores originais</option>
+        </select>
+        <p class="registro-ajuda">A escala mantém a proporção entre serviços e ganhos fixos. Não altera transações antigas nem os valores reais da sua lista de gastos.</p>
+      </div>
       <div class="section">
         <h2>🎯 Tarefas Pendentes</h2>
         <div id="tarefasPendentes">
@@ -215,6 +227,46 @@
       </div>
     </div>
 
+    <div class="section" id="registroSection">
+      <h2>🧾 Registro de gastos e comprovantes</h2>
+      <p class="registro-ajuda">Dados locais, separados do saldo fictício. Itens em dólar ficam registrados sem entrar no total em reais. Revise todos os valores sugeridos pelo OCR.</p>
+      <div class="registro-resumo">
+        <div><small>Total registrado em reais</small><strong id="registroTotal">R$ 0,00</strong></div>
+        <small id="registroQuantidade">Nenhum lançamento</small>
+      </div>
+      <h3>Adicionar ou editar lançamento</h3>
+      <form id="registroForm">
+        <label for="registroCategoria">Categoria</label>
+        <select id="registroCategoria" required></select>
+        <label for="registroDescricao">Descrição</label>
+        <input id="registroDescricao" required maxlength="180" placeholder="Ex.: Lista Shein (14)" />
+        <label for="registroValor">Valor</label>
+        <input id="registroValor" required inputmode="decimal" placeholder="481,54" />
+        <label for="registroMoeda">Moeda</label>
+        <select id="registroMoeda"><option value="BRL">Real (R$)</option><option value="USD">Dólar ($)</option></select>
+        <label for="registroStatus">Situação</label>
+        <select id="registroStatus"><option value="pago">✅ Pago/comprado</option><option value="pendente">❌ Pendente</option></select>
+        <div class="registro-acoes">
+          <button type="submit" id="registroSalvar">Adicionar lançamento</button>
+          <button type="button" id="registroCancelar">Cancelar edição</button>
+        </div>
+      </form>
+      <h3>📷 Ler comprovante</h3>
+      <input id="registroComprovante" type="file" accept="image/*,application/pdf,.pdf" />
+      <button type="button" id="registroAnalisar">Sugerir dados do comprovante</button>
+      <p id="registroOCRStatus" class="registro-ajuda" aria-live="polite">A leitura acontece localmente no navegador usando bibliotecas de terceiros carregadas somente quando solicitadas; não salva o arquivo.</p>
+      <h3>📋 Importar lista do WhatsApp</h3>
+      <textarea id="registroTexto" rows="5" placeholder="Cole aqui sua lista completa com seções numeradas, valores e ✅/❌"></textarea>
+      <div class="registro-acoes">
+        <button type="button" id="registroPreverImport">Conferir importação</button>
+        <button type="button" id="registroConfirmarImport" disabled>Confirmar novos itens</button>
+      </div>
+      <p id="registroImportPreview" class="registro-ajuda" aria-live="polite"></p>
+      <h3>Histórico organizado</h3>
+      <div id="registroGrupos"></div>
+      <button type="button" id="registroWhatsApp">Compartilhar resumo no WhatsApp</button>
+    </div>
+
     <!-- Camada das chamas -->
     <canvas id="fx-embers" aria-hidden="true"></canvas>
 
@@ -222,6 +274,7 @@
     <script defer src="js/splashAmimacao.js"></script>
     <script defer src="js/storage.js"></script>
     <script defer src="js/utils.js"></script>
+    <script defer src="js/economia.js"></script>
     <script defer src="js/bonusEspecial.js"></script>
     <script defer src="js/ganhoFixo.js"></script>
     <script defer src="js/tarefasPendentes.js"></script>
@@ -233,5 +286,6 @@
     <!-- <script defer src="js/AA_testeCodigoDiff.js"></script> -->
     <script src="js/appMain.js"></script>
     <script src="js/roleta.js"></script>
+    <script defer src="js/registro.js"></script>
   </body>
 </html>
