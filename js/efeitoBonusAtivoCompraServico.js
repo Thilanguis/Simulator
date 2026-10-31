@@ -40,6 +40,13 @@ document.addEventListener('DOMContentLoaded', () => {
     final.textContent = formatBR(price);
     line.append(final);
     preview.append(line);
+    const hours = item.reduceHours || (item.id === 'ACELERAR_GLOBAL_4D_1H' ? 96 : 0);
+    if (hours) {
+      const explanation = document.createElement('p');
+      explanation.className = 'hint reducer-effect-preview';
+      explanation.textContent = 'Reduz até ' + hours + 'h de cada prazo elegível ao longo de ' + Economy.config.reducerDurationMs / 1000 + 's.';
+      preview.append(explanation);
+    }
     if (discounted) {
       const chip = document.createElement('span');
       chip.className = 'purchase-bonus-chip';
@@ -57,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     update();
   });
   document.getElementById('dinnerGuestCount').addEventListener('input', update);
-  document.getElementById('bonusEspecialCheckbox').addEventListener('change', update);
+  document.getElementById('bonusEspecialCheckbox').addEventListener('change', () => queueMicrotask(update));
   window.addEventListener('economy:changed', update);
   update();
 });

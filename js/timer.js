@@ -9,17 +9,63 @@ let contadorTarefasTimer = 0,
   sessionHasEligibleTask = false;
 let timerEarnedUnits = 0,
   timerLastTick = 0;
+let sessionDynamicActivities = new Set(),
+  legacyDynamicActivity = false;
+function activeDynamicCount() {
+  return sessionDynamicActivities.size || (legacyDynamicActivity ? 1 : 0);
+}
+function renderDynamicCombo() {
+  let area = document.getElementById('timerDynamicCombo');
+  if (!area) {
+    area = document.createElement('div');
+    area.id = 'timerDynamicCombo';
+    document.getElementById('contadorBloco').append(area);
+  }
+  area.replaceChildren();
+  const caption = document.createElement('p');
+  caption.className = 'hint';
+  caption.textContent = activeDynamicCount()
+    ? 'Combo: ' + activeDynamicCount() + ' atividade(s) · +' + formatBR(Economy.round(getEconomy().timer.autoIncrement * activeDynamicCount())) + ' a cada ' + getEconomy().timer.autoEvery + ' segundos · toque no × para encerrar uma dinâmica.'
+    : 'Seu combo aparece aqui ao registrar atividades 💲 durante a sessão.';
+  area.append(caption);
+  for (const name of sessionDynamicActivities) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'dynamic-combo-chip';
+    chip.textContent = name + ' ×';
+    chip.setAttribute('aria-label', 'Encerrar dinâmica: ' + name);
+    chip.onclick = () => {
+      syncTimer();
+      sessionDynamicActivities.delete(name);
+      legacyDynamicActivity = false;
+      sessionHasEligibleTask = activeDynamicCount() > 0;
+      persistTimer();
+      renderDynamicCombo();
+    };
+    area.append(chip);
+  }
+}
 function persistTimer() {
   AppStorage.setItem(
     'timerSession',
-    JSON.stringify({ seconds: tempoSegundos, earnedUnits: timerEarnedUnits, rate: Number(document.getElementById('valorPorMinuto').value), active: timerEmSessao, tasks: contadorTarefasTimer, eligible: sessionHasEligibleTask }),
+    JSON.stringify({
+      seconds: tempoSegundos,
+      earnedUnits: timerEarnedUnits,
+      rate: Number(document.getElementById('valorPorMinuto').value),
+      active: timerEmSessao,
+      tasks: contadorTarefasTimer,
+      eligible: activeDynamicCount() > 0,
+      dynamicActivities: Array.from(sessionDynamicActivities),
+      legacyDynamicActivity,
+      running: !!timerInterval,
+    }),
   );
 }
 function syncTimer() {
   if (!timerInterval || !timerLastTick) return;
   const seconds = Math.max(0, Math.floor((Date.now() - timerLastTick) / 1000));
   if (!seconds) return;
-  const state = Economy.step({ seconds: tempoSegundos, earnedUnits: timerEarnedUnits, rate: Number(document.getElementById('valorPorMinuto').value) }, seconds, getEconomy(), sessionHasEligibleTask);
+  const state = Economy.step({ seconds: tempoSegundos, earnedUnits: timerEarnedUnits, rate: Number(document.getElementById('valorPorMinuto').value) }, seconds, getEconomy(), activeDynamicCount());
   tempoSegundos = state.seconds;
   timerEarnedUnits = state.earnedUnits;
   document.getElementById('valorPorMinuto').value = state.rate.toFixed(2);
@@ -30,7 +76,12 @@ function syncTimer() {
 function aplicarBonusDeTarefaDuranteTimer(value, name) {
   if (!timerEmSessao) return;
   syncTimer();
-  if (ELIGIBLE_TASKS.has(String(name).trim())) sessionHasEligibleTask = true;
+  if (ELIGIBLE_TASKS.has(String(name).trim())) {
+    sessionDynamicActivities.add(String(name).trim());
+    legacyDynamicActivity = false;
+    sessionHasEligibleTask = true;
+    renderDynamicCombo();
+  }
   contadorTarefasTimer++;
   const settings = getEconomy();
   const classic = Economy.config.services.find((s) => s.id === name)?.classic || Economy.config.gains.find((s) => s.id === name)?.classic || value;
@@ -76,11 +127,16 @@ document.addEventListener('DOMContentLoaded', () => {
     tempoSegundos = saved.seconds;
     timerEarnedUnits = saved.earnedUnits;
     contadorTarefasTimer = saved.tasks;
-    sessionHasEligibleTask = saved.eligible;
+    if (saved.dynamicActivities !== undefined && (!Array.isArray(saved.dynamicActivities) || saved.dynamicActivities.length > 1000 || saved.dynamicActivities.some((name) => typeof name !== 'string' || name.length > 200)))
+      throw new Error('Combo salvo inválido.');
+    sessionDynamicActivities = new Set(saved.dynamicActivities || []);
+    legacyDynamicActivity = saved.dynamicActivities === undefined ? !!saved.eligible : !!saved.legacyDynamicActivity;
+    sessionHasEligibleTask = activeDynamicCount() > 0;
     timerEmSessao = true;
     document.getElementById('valorPorMinuto').value = saved.rate;
     document.getElementById('btnPlayPauseTempo').textContent = '▶️ Retomar sessão salva';
     atualizarDisplay();
+    renderDynamicCombo();
   } catch (error) {
     storageFailure(error);
   }
@@ -90,3 +146,33 @@ window.addEventListener('pagehide', () => {
   persistTimer();
   AppStorage.flush();
 });
+// A mirrored device displays the controller's session without integrating it twice.
+window.freezeWalletTimer = function () {
+  syncTimer();
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  timerLastTick = 0;
+  releaseWakeLock();
+  persistTimer();
+  document.getElementById('btnPlayPauseTempo').textContent = timerEmSessao ? '▶️ Continuar' : '▶️ Começar';
+  atualizarDisplay();
+};
+window.addEventListener('wallet:remote', (event) => {
+  if (event.detail && !event.detail.initial && !event.detail.changedKeys.includes('timerSession')) return;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  timerLastTick = 0;
+  const saved = JSON.parse(AppStorage.getItem('timerSession') || 'null');
+  tempoSegundos = saved?.seconds || 0;
+  timerEarnedUnits = saved?.earnedUnits || 0;
+  contadorTarefasTimer = saved?.tasks || 0;
+  timerEmSessao = !!saved?.active;
+  sessionDynamicActivities = new Set(saved?.dynamicActivities || []);
+  legacyDynamicActivity = !!saved?.legacyDynamicActivity;
+  sessionHasEligibleTask = activeDynamicCount() > 0;
+  document.getElementById('valorPorMinuto').value = saved?.rate ?? getEconomy().timer.base;
+  document.getElementById('btnPlayPauseTempo').textContent = timerEmSessao ? '▶️ Continuar' : '▶️ Começar';
+  atualizarDisplay();
+  renderDynamicCombo();
+});
+window.addEventListener('wallet:control', () => persistTimer());
