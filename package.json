@@ -7,7 +7,9 @@
     "test:e2e": "playwright test",
     "simulate": "node scripts/simulate.cjs",
     "build": "node scripts/build.cjs",
-    "start": "node scripts/serve.cjs"
+    "start": "node scripts/serve.cjs",
+    "setup:local": "node scripts/setup-local.cjs",
+    "test:live": "playwright test --config playwright.live.config.cjs"
   },
   "dependencies": {
     "@tesseract.js-data/eng": "1.0.0",

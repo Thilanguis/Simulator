@@ -43,7 +43,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (key === 'accelBoosts' && !['endsAt', 'perSecondMs', 'budgetLeftMs'].every((k) => Number.isFinite(item[k]) && item[k] >= 0)) throw new Error('Aceleração inválida.');
       }
     }
-    if (sim.economy) Economy.validate(JSON.parse(sim.economy));
+    if (sim.economyCatalog) EconomyCatalog.prepare(JSON.parse(sim.economyCatalog), JSON.parse(sim.economy));
+    else if (sim.economy) Economy.validate(JSON.parse(sim.economy));
     if (sim.bonusEspecialAtivo && typeof JSON.parse(sim.bonusEspecialAtivo) !== 'boolean') throw new Error('Estado do bônus inválido.');
     if (sim.timerSession) {
       const t = JSON.parse(sim.timerSession);
@@ -67,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
       $('backupMessage').textContent = error.message;
     }
   };
-  $('confirmBackup').onclick = () => {
+  $('confirmBackup').onclick = async () => {
     if (!candidate) return;
-    if (!confirm('Substituir todos os dados locais pelo backup conferido?')) return;
+    if (!(await AppDialog.confirm('Substituir todos os dados locais pelo backup conferido?'))) return;
     try {
       WalletStore.restore(candidate);
       location.reload();

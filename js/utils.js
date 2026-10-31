@@ -3,7 +3,7 @@
 /* =================================================================== */
 
 function formatBR(v) {
-  return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function escapeHTML(text) {

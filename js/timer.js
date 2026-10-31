@@ -24,12 +24,7 @@ function syncTimer() {
   timerEarnedUnits = state.earnedUnits;
   document.getElementById('valorPorMinuto').value = state.rate.toFixed(2);
   timerLastTick += seconds * 1000;
-  if (tempoSegundos >= Math.floor(getEconomy().timer.maxMinutes * 60)) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-    releaseWakeLock();
-    document.getElementById('btnPlayPauseTempo').textContent = 'Limite atingido · calcular';
-  }
+
   persistTimer();
 }
 function aplicarBonusDeTarefaDuranteTimer(value, name) {
@@ -41,7 +36,7 @@ function aplicarBonusDeTarefaDuranteTimer(value, name) {
   const classic = Economy.config.services.find((s) => s.id === name)?.classic || Economy.config.gains.find((s) => s.id === name)?.classic || value;
   const increment = Economy.taskIncrement(classic, settings) + settings.timer.repeatIncrement * contadorTarefasTimer;
   const input = document.getElementById('valorPorMinuto');
-  input.value = Math.min(settings.timer.maxRate, Economy.round(Number(input.value) + increment)).toFixed(2);
+  input.value = Economy.round(Number(input.value) + increment).toFixed(2);
   persistTimer();
   atualizarValorAcumulado();
 }

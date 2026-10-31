@@ -2,7 +2,13 @@ const VERSION = '__BUILD_VERSION__';
 const PREFIX = 'findom-wallet-' + new URL(self.registration.scope).pathname + '-';
 const CACHE = PREFIX + VERSION;
 const ASSETS = /*__PRECACHE__*/ [];
+// Live Server serves editable source files. Avoid stale caches during local review.
+const LIVE_SERVER = ['127.0.0.1', 'localhost'].includes(self.location.hostname) && self.location.port === '5501';
 self.addEventListener('install', (event) => {
+  if (LIVE_SERVER) {
+    event.waitUntil(self.skipWaiting());
+    return;
+  }
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
@@ -15,6 +21,10 @@ self.addEventListener('message', (event) => {
   if (event.data?.type === 'VERSION') event.ports[0]?.postMessage(VERSION);
 });
 self.addEventListener('activate', (event) => {
+  if (LIVE_SERVER) {
+    event.waitUntil(self.clients.claim());
+    return;
+  }
   event.waitUntil(
     (async () => {
       const names = await caches.keys();
@@ -30,6 +40,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 self.addEventListener('fetch', (event) => {
+  if (LIVE_SERVER) return;
   if (event.request.method !== 'GET' || new URL(event.request.url).origin !== self.location.origin) return;
   if (!event.request.url.startsWith(self.registration.scope)) return;
   event.respondWith(

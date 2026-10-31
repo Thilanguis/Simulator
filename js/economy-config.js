@@ -1,4 +1,9 @@
-/* Canonical catalog. Values are fictional credits unless a currency is specified. */
+/* Catálogo do saldo interno (R$).
+ * Adicione objetos aos arrays services, gains e games para criar opções no site.
+ * Edite balanced para mudar preços/ganhos padrão. classic mantém a referência antiga.
+ * timerEligible: true exibe 💲 e habilita o aumento automático durante o cronômetro.
+ * Não é necessário adicionar botões ou editar o HTML.
+ */
 (function (root) {
   const data = {
     services: [
@@ -68,6 +73,7 @@
       },
       {
         id: 'Obrigação de servir (2 tarefas)',
+        taskCount: 2,
         description: 'Intensifica sensação de controle',
         label: 'Obrigação de servir (2 tarefas)',
         classic: 6500,
@@ -219,14 +225,13 @@
         balanced: 20,
       },
     },
-    eligible: ['Videogames Competitivos', 'Perfil', 'Jogos de tabuleiro com amigas', 'Buraco'],
-    gameRewards: {
-      'Match Masters': 8,
-      'Videogames Competitivos': 10,
-      Buraco: 10,
-      Perfil: 12,
-      'Jogos de tabuleiro com amigas': 10,
-    },
+    games: [
+      { id: 'Match Masters', amount: 8, timerEligible: false },
+      { id: 'Videogames Competitivos', amount: 10, timerEligible: true },
+      { id: 'Buraco', amount: 10, timerEligible: true },
+      { id: 'Perfil', amount: 12, timerEligible: true },
+      { id: 'Jogos de tabuleiro com amigas', amount: 10, timerEligible: true },
+    ],
     cooldowns: {
       'Ela decide toda a agenda do dia': 336,
       'Vale de escolha de FILME': 240,
@@ -238,6 +243,7 @@
       REDUZIR_BLOQUEIO_3D: 72,
       ACELERAR_GLOBAL_4D_1H: 96,
     },
+    contractRules: { failurePenalty: 160, creamPenalty: 40, dinnerGuestPrice: 10 },
     bonusPercent: 15,
     discountPercent: 15,
     reducerDurationMs: 60000,
@@ -245,8 +251,6 @@
     timer: {
       classic: {
         base: 1,
-        maxRate: 1000000,
-        maxMinutes: 10080,
         autoEvery: 3,
         autoIncrement: 0.33,
         repeatIncrement: 0.13,
@@ -254,15 +258,15 @@
       },
       balanced: {
         base: 0.5,
-        maxRate: 3,
-        maxMinutes: 120,
         autoEvery: 60,
-        autoIncrement: 0.05,
-        repeatIncrement: 0.01,
-        taskScale: 0.025,
+        autoIncrement: 0.01,
+        repeatIncrement: 0.002,
+        taskScale: 0.01,
       },
     },
+    // Quantidade máxima por lançamento no ganho que usa multiplicador.
     quantityMax: 30,
+    // Teto em R$ para ganhos digitados em jogos e em Outro; não limita o saldo total.
     manualGainMax: 100,
     roulette: [
       {
@@ -449,6 +453,8 @@
     classicQuantityMax: 1000000,
     classicManualGainMax: 1000000,
   };
+  data.gameRewards = Object.fromEntries(data.games.map((item) => [item.id, item.amount]));
+  data.eligible = [...data.services, ...data.gains, ...data.games].filter((item) => item.timerEligible).map((item) => item.id);
   if (typeof module === 'object') module.exports = data;
   else root.EconomyConfig = data;
 })(typeof window === 'object' ? window : globalThis);

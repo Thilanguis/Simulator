@@ -7,7 +7,11 @@ test('integer Brazilian amounts, USD, invalid and overflow', () => {
   assert.equal(F.cents('R$ 1.198,52'), 119852);
   assert.equal(F.cents('$50.25', 'USD'), 5025);
   assert.equal(F.cents('20,5'), 2050);
-  for (const n of ['1,234', 'NaN', '0.99', '-', '1.2.00']) assert.throws(() => F.cents(n));
+  assert.equal(F.cents('511.22'), 51122);
+  assert.equal(F.cents('0.99'), 99);
+  assert.equal(F.cents('1.234'), 123400);
+  assert.equal(F.cents('511,22'), 51122);
+  for (const n of ['1,234', 'NaN', '-', '1.2.00']) assert.throws(() => F.cents(n));
   assert.throws(() => F.cents('99999999999999999999999'));
 });
 test('all category subtotals sum exactly, foreign/voided excluded, negative budget', () => {
@@ -21,7 +25,8 @@ test('all category subtotals sum exactly, foreign/voided excluded, negative budg
   );
   assert.equal(t.foreign.USD, 5000);
   assert.equal(t.remaining, 100 - t.total);
-  assert.equal(t.pendingCount, 8);
+  assert.equal(t.pendingCount, 0);
+  assert.equal(t.paid, t.total);
 });
 test('CRUD, paid/pending/refund transitions, corrections and filters', () => {
   let s = F.empty(),
@@ -29,9 +34,10 @@ test('CRUD, paid/pending/refund transitions, corrections and filters', () => {
   s = F.update(s, { type: 'add', entry: e });
   assert.equal(F.totals(s.entries).paid, 1234);
   s = F.update(s, { type: 'edit', id: e.id, patch: { status: 'pending', amount: 1400 } });
-  assert.equal(F.totals(s.entries).pending, 1400);
+  assert.equal(F.totals(s.entries).paid, 1400);
+  assert.equal(s.entries[0].status, 'paid');
   assert.equal(F.filtered(s.entries, { store: 'aurora', from: '2026-01-01', to: '2026-01-31' }).length, 1);
-  assert.equal(F.filtered(s.entries, { status: 'paid' }).length, 0);
+  assert.equal(F.filtered(s.entries, { status: 'paid' }).length, 1);
   s = F.update(s, { type: 'edit', id: e.id, patch: { status: 'refunded' } });
   assert.equal(F.totals(s.entries).total, 0);
   s = F.update(s, { type: 'delete', id: e.id });
@@ -104,4 +110,79 @@ test('receipt missing/ambiguous fields remain uncertain and duplicate is only su
 test('backup finance validation rejects malformed state', () => {
   assert.doesNotThrow(() => F.validateState(F.empty()));
   assert.throws(() => F.validateState({ ...F.empty(), entries: [entry({ amount: Infinity })] }));
+});
+test('legacy pending notes and imported crosses count as spent without deleting anything', () => {
+  const legacy = entry({ status: 'pending', amount: 1234 });
+  assert.equal(F.totals([legacy]).paid, 1234);
+  assert.equal(legacy.status, 'pending');
+  const p = F.preview('1. Lista de Compras\n• Produto fictício ❌: R$ 25,00\n• Outro produto: R$ 15,00', [], '');
+  assert.equal(p.rows.length, 2);
+  assert.ok(p.rows.every((row) => row.entry.status === 'paid'));
+  assert.equal(p.totals.paid, 4000);
+  assert.ok(!p.warnings.some((w) => w.includes('pendente')));
+});
+test('bulk deletion is atomic, audits each item once and protects linked records', () => {
+  let state = F.empty();
+  const a = entry(),
+    b = entry({ amount: 2000 }),
+    linked = entry({ redemptionId: 'legacy' });
+  for (const e of [a, b, linked]) state = F.update(state, { type: 'add', entry: e });
+  assert.throws(() => F.update(state, { type: 'deleteMany', ids: [a.id, 'missing'] }));
+  assert.throws(() => F.update(state, { type: 'deleteMany', ids: [a.id, linked.id] }));
+  assert.equal(state.entries.length, 3);
+  const next = F.update(state, { type: 'deleteMany', ids: [a.id, a.id, b.id] });
+  assert.equal(next.entries.length, 1);
+  assert.equal(next.entries[0].id, linked.id);
+  assert.equal(next.audit.length, 2);
+  assert.equal(next.audit[0].batchId, next.audit[1].batchId);
+  assert.equal(next.revision, state.revision + 1);
+});
+test('list summaries never duplicate details; a subtotal-only category becomes a reviewable note', () => {
+  const text = `1. Jogo de Buraco\n• Pago R$ 21,50\nTotal: R$ 21,50\n2. Buscar na Casa da Nathalia\n• Espera combinada por minuto, sem valor individual.\nTotal: R$ 30,00\n3. Match Masters\n• R$ 40,00 + 2,50\n• 3,25 = R$ 45,75\n9. Resumo Final dos Itens\n1. Buraco R$ 21,50\n2. Casa Nathalia R$ 30,00\n3. Match Masters R$ 45,75\nTotal geral R$ 97,25`;
+  const p = F.preview(text, [], '');
+  assert.equal(p.rows.length, 5);
+  assert.equal(p.totals.total, 9725);
+  assert.equal(p.totals.byCategory[F.categories[5]], 4575);
+  const note = p.rows.find((r) => r.entry.category === F.categories[1]);
+  assert.equal(note.entry.amount, 3000);
+  assert.match(note.entry.note, /Espera combinada/);
+  assert.ok(p.warnings.some((w) => w.includes('sem valores detalhados')));
+  assert.ok(!p.warnings.some((w) => w.includes('subtotal informado')));
+  const saved = F.commitPreview(F.empty(), p);
+  assert.equal(F.commitPreview(saved, F.preview(text, saved.entries, '')).entries.length, 5);
+});
+test('USD quantities remain foreign and original unit values are retained', () => {
+  const p = F.preview('1. Lista de Compras\n• Item fictício ❌: $12,50 x3\n• Loja Aurora ✅: R$ 14,90', [], '');
+  assert.equal(p.totals.total, 1490);
+  assert.equal(p.totals.foreign.USD, 3750);
+  assert.equal(p.rows[0].entry.originalMoney[0].amount, 1250);
+  assert.equal(p.rows[0].entry.quantity, 3);
+});
+test('store numbering continues from imported list labels for a receipt', () => {
+  const p = F.preview('1. Lista de Compras\n• Lista Shein (7) ✅: R$ 18,00\n• Lista Shein (9) ✅: R$ 22,00', [], '');
+  const entries = F.commitPreview(F.empty(), p).entries;
+  assert.equal(F.nextStoreLabel(entries, 'Shein'), 'Shein (10)');
+});
+
+test('moving rows preserves values and IDs, recalculates categories and audits safely', () => {
+  let s = F.empty();
+  for (const [id, category, amount] of [
+    ['a', F.categories[0], 1000],
+    ['b', F.categories[0], 2000],
+    ['c', F.categories[7], 500],
+  ])
+    s = F.update(s, { type: 'add', entry: { id, category, amount, currency: 'BRL', status: 'paid', date: '', description: id } });
+  s = F.update(s, { type: 'move', ids: ['a'], category: F.categories[7], beforeId: 'c' });
+  assert.deepEqual(
+    s.entries.map((e) => e.id),
+    ['b', 'a', 'c'],
+  );
+  assert.equal(F.totals(s.entries).byCategory[F.categories[0]], 2000);
+  assert.equal(F.totals(s.entries).byCategory[F.categories[7]], 1500);
+  assert.equal(F.totals(s.entries).total, 3500);
+  assert.equal(s.audit.at(-1).type, 'move');
+  assert.throws(() => F.update(s, { type: 'move', ids: ['missing'], category: F.categories[7] }));
+  const protectedState = structuredClone(s);
+  protectedState.entries[0].redemptionId = 'legacy';
+  assert.throws(() => F.update(protectedState, { type: 'move', ids: ['b'], category: F.categories[7] }));
 });

@@ -1,30 +1,30 @@
 # Findom Wallet
 
-Aplicativo web estático com simulador de créditos fictícios, serviços, cronômetro, roleta, controle financeiro pessoal e acompanhamento de resgates. Mantém a identidade escura, vermelha e dourada do projeto original.
+Aplicativo web estático com Saldo Dominadora em R$ usado dentro do Wallet, serviços, cronômetro, roleta e notas de gastos reais em uma área separada. Mantém a identidade escura, vermelha e dourada do projeto original.
 
-## Executar
+## Executar localmente no VS Code
 
-Requer Node.js 24 ou superior e npm.
+A pasta ativa e o repositório Git são **D:\Sistemas DEV\dominação\Simulator**. Abra **http://127.0.0.1:5501/** pelo Live Server. A pasta pai também pode continuar aberta: ela encaminha para Simulator. O OCR já está preparado em `vendor/`; basta salvar os arquivos e atualizar a página. Não é necessário build ao editar HTML, CSS ou JavaScript.
+
+Para reinstalar/preparar as bibliotecas no futuro (Node.js 24 ou superior):
 
 ```sh
 npm ci
-npm run build
-npm start
+npm run setup:local
 ```
 
-Abra `http://127.0.0.1:4173`. Para hospedar, publique **o conteúdo de `dist/`**, incluindo `vendor/`, por HTTPS. O build copia OCR, modelos de idioma e PDF.js para o próprio site. Não abra o HTML por `file://`. É preciso construir o projeto, não apenas publicar a raiz do repositório.
+Consulte [LEIA-ME-LOCAL.md](LEIA-ME-LOCAL.md) para tarefas do VS Code, preservação de dados, testes e o fluxo sem commits/push automáticos. Na porta 5501 o cache do service worker não intercepta os arquivos editáveis.
 
-O comando build gera uma versão a partir do hash dos arquivos e um service worker com todos os recursos locais. A primeira instalação baixa também o motor OCR e idiomas (dezenas de MB). Depois do cache inicial o aplicativo e o OCR funcionam offline. Não há servidor de pagamentos ou de armazenamento de comprovantes.
+Para gerar uma versão de produção, execute `npm run build` e sirva o conteúdo de `dist/`, incluindo `vendor/`, por HTTPS. O build de produção mantém as funções de atualização e abertura offline. Nenhum desses comandos publica ou faz operações Git.
 
 ## Usar
 
 - **Simulador:** saldo, tarefas, bloqueios e atalhos para ganhar créditos, comprar serviços e abrir a roleta. Novas instalações começam no Equilibrado. Dados legados começam no Clássico; trocar modo afeta somente operações futuras. Uma sessão do cronômetro deve ser concluída antes de trocar de economia.
 - **Economia personalizada:** abra o editor JSON. Preços/ganhos estão em créditos; `benefits.amount` usa centavos da moeda indicada; percentuais são números como `15`. Preços e ganhos aceitam duas casas; parâmetros do cronômetro, até quatro. Os pesos da roleta são relativos. A validação bloqueia valores inválidos.
-- **Controle Financeiro:** adicione descrição, categoria, valor e situação. A data pode ficar em branco quando desconhecida. Total registrado e orçamento restante incluem pagos e pendentes; “pago” identifica dinheiro efetivamente gasto. Cancelados e reembolsados permanecem no histórico e ficam fora dos totais. USD sem equivalência explícita em BRL é apresentado separadamente. Salário é uma categoria de despesa/compromisso da lista, não crédito do jogo nem receita automática.
+- **Controle Financeiro:** adicione descrição, categoria, valor e situação. A data pode ficar em branco quando desconhecida. Total registrado e orçamento restante incluem pagos e pendentes; “pago” identifica dinheiro efetivamente gasto. Cancelados e reembolsados permanecem no histórico e ficam fora dos totais. USD sem equivalência explícita em BRL é apresentado separadamente. O campo tipo de nota/categoria organiza jogos, alimentação, salário e compras; observações são opcionais. Os totais reais aparecem apenas no painel Notas e gastos reais. Salário é uma categoria de despesa/compromisso da lista, não crédito do jogo nem receita automática.
 - **WhatsApp:** cole o texto, escolha a data para os itens sem data e analise. Revise categorias, situação e valores de cada item. Subtotais digitados são apenas comparados e nunca somados. Duplicados/divergentes ficam fora da importação; “Conferir existente” abre uma correção explícita com confirmação. Itens sem marcação são sugeridos como pendentes.
 - **Comprovantes:** selecione PNG/JPEG/WebP/BMP/PDF; confira o formulário preenchido. Não há lançamento até a confirmação. Datas explícitas no texto da lista são preservadas; a data comum pode ficar em branco quando desconhecida. O arquivo é descartado após processar; o texto extraído fica apenas no formulário durante a sessão e não entra no backup. Também é possível corrigir/colar texto reconhecido e usar o cadastro manual.
-- **Resgates:** nas Configurações, habilite regras e escolha conversão, limites e orçamentos separados por moeda. Solicitar reserva os créditos uma vez; aprovar continua sem despesa. “Registrar pagamento ocorrido” solicita o valor realmente pago, moeda, loja e data. Só então nasce uma despesa vinculada. Cancelamento devolve a reserva; reembolso confirmado estorna a despesa e devolve créditos uma vez. O aplicativo não envia dinheiro. Despesas vinculadas só podem ser alteradas pelo resgate para manter os dois livros consistentes. Use “Corrigir pagamento” para corrigir valor, moeda, data, estabelecimento ou categoria sem gerar outra despesa nem devolver créditos.
-- **Roleta:** mantém 19 setores e 72h de intervalo. Os prêmios gratuitos ficam disponíveis para resgate uma vez; respeitam bloqueios e entram no histórico ao gerar uma tarefa/efeito. O setor de dinheiro é uma oferta de benefício real, com custo do catálogo e aprovação; não é transferência automática. Bônus gratuito dura 24h. Um giro interrompido é concluído ao reabrir.
+- **Roleta:** mantém 19 setores e 72h de intervalo. Os prêmios gratuitos ficam disponíveis para resgate uma vez; respeitam bloqueios e entram no histórico ao gerar uma tarefa/efeito. O setor de dinheiro mostra um benefício do catálogo, comprado com o saldo interno do Wallet; essa compra não cria automaticamente uma despesa real. Bônus gratuito dura 24h. Um giro interrompido é concluído ao reabrir.
 
 ## Dados, backup e atualização
 
@@ -56,3 +56,11 @@ npm run test:e2e
 ```
 
 Os testes usam somente registros e comprovantes fictícios. A suíte de navegador testa OCR real de imagem gerada, PDF com texto, importação, CRUD, migração, backup, cronômetro, bônus, cooldowns, prêmios, resgates, mobile, atualização consentida e abertura offline. A simulação gera [tabelas comparativas e cenários](docs/ECONOMIA.md). A [auditoria da base](docs/ARQUITETURA.md) registra as dependências e inconsistências encontradas. Consulte [VALIDACAO.md](docs/VALIDACAO.md) para os resultados executados.
+
+## Separação atual do Wallet e das notas
+
+Saldo Dominadora é dinheiro interno, sempre exibido em R$. A operação Ganho de Crédito aumenta esse saldo; Compra de Serviço o reduz. Os valores e o histórico existentes não foram convertidos nem recalculados para esta mudança de apresentação.
+
+A lista externa fica no botão Notas e gastos reais. O início do Wallet não exibe cartões financeiros. A interface de conversão/resgates foi retirada; dados anteriores continuam preservados em armazenamento e backups. O título mantém o roxo original e muda para amarelo/dourado com o bônus lingerie.
+
+O importador ignora o resumo final repetido, distingue subtotais na mesma moeda de equivalências USD/BRL, conserva quantidades e sinaliza categorias que contêm apenas um total sem itens discriminados. O rascunho da prévia fica na sessão do navegador; lançamentos só são salvos ao confirmar. Nenhuma lista pessoal integra o código ou as fixtures.

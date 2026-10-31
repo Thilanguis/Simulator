@@ -122,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function atualizarSaldo() {
     saldoDominadora = Economy.round(saldoDominadora);
     if (!saldoElement) return;
-    document.getElementById('homeCredits').textContent = formatBR(saldoDominadora);
     saldoElement.textContent =
       typeof formatBR === 'function'
         ? formatBR(saldoDominadora)
@@ -249,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
           let detalhesHtml = '';
 
           if (isNeutro) {
-            detalhesHtml = '<span>Sem bônus aplicado: ' + valorFinalFmt + ' créditos</span>';
+            detalhesHtml = '<span>Sem bônus aplicado: ' + valorFinalFmt + '</span>';
           } else {
             const labelPrefix = isBonusGanho ? 'Bônus:' : 'Desconto:';
             const ajusteLabel = isBonusGanho ? 'ajuste de' : 'economia de';
@@ -314,13 +313,13 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistorico();
   }
 
-  window.deletarItemHistorico = function (timestamp) {
+  window.deletarItemHistorico = async function (timestamp) {
     const idx = historico.findIndex((h) => h.timestamp === timestamp);
     if (idx === -1) return;
 
     const item = historico[idx];
 
-    if (!confirm('Arquivar este registro? O saldo, tarefas e benefícios já adquiridos serão mantidos.')) return;
+    if (!(await AppDialog.confirm('Arquivar este registro? O saldo, tarefas e benefícios já adquiridos serão mantidos.'))) return;
     const archived = JSON.parse(AppStorage.getItem('archivedHistory') || '[]');
     archived.push(item);
     AppStorage.setItem('archivedHistory', JSON.stringify(archived));
@@ -946,7 +945,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const numeroWhatsApp = ''; // recipient is chosen in WhatsApp
         const filtered = getFilteredHistorico();
-        if (!filtered.length) return alert('Não há itens no histórico para enviar.');
+        if (!filtered.length) return AppDialog.alert('Não há itens no histórico para enviar.');
         const dataSelec = filterDateInput && filterDateInput.value ? new Date(filterDateInput.value) : null;
         const titulo = dataSelec ? `📅 Histórico do dia ${dataSelec.toLocaleDateString('pt-BR')}` : '📜 Histórico completo (mais recentes primeiro)';
         const linhas = filtered.map((h, idx) => {
@@ -973,15 +972,15 @@ document.addEventListener('DOMContentLoaded', () => {
         window.open(urlWhatsApp, '_blank');
       } catch (e) {
         console.error('Falha ao abrir WhatsApp:', e);
-        alert('Não foi possível abrir o WhatsApp. Tente novamente.');
+        AppDialog.alert('Não foi possível abrir o WhatsApp. Tente novamente.');
       }
     });
   }
 
   if (resetBtn) {
-    resetBtn.addEventListener('click', (ev) => {
+    resetBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
-      if (!confirm('Tem certeza que deseja zerar o saldo?')) return;
+      if (!(await AppDialog.confirm('Tem certeza que deseja zerar o saldo?'))) return;
       const oldBalance = saldoDominadora;
       saldoDominadora = 0;
       adicionarHistorico('Ajuste manual de saldo: ' + oldBalance + ' → 0', 0, 'ajuste');
@@ -994,10 +993,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (limparBtn) {
-    limparBtn.addEventListener('click', (ev) => {
+    limparBtn.addEventListener('click', async (ev) => {
       ev.preventDefault();
-      if (!historico || historico.length === 0) return alert('O histórico já está vazio.');
-      if (!confirm('Arquivar todo o histórico? O saldo será mantido e o arquivo continuará no backup.')) return;
+      if (!historico || historico.length === 0) return AppDialog.alert('O histórico já está vazio.');
+      if (!(await AppDialog.confirm('Arquivar todo o histórico? O saldo será mantido e o arquivo continuará no backup.'))) return;
       const archive = JSON.parse(AppStorage.getItem('archivedHistory') || '[]');
       AppStorage.setItem('archivedHistory', JSON.stringify([...archive, ...historico]));
 
@@ -1011,32 +1010,34 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (adicionarBtn) {
-    adicionarBtn.addEventListener('click', () => {
+    adicionarBtn.addEventListener('click', async () => {
       const tipo = (tipoTransacaoSelect && tipoTransacaoSelect.value) || 'gasto';
       let valor, tarefa, descricao;
 
       if (tipo === 'gasto') {
         const tarefaSelecionada = (selectTarefaSelect && selectTarefaSelect.value) || '';
-        if (!tarefaSelecionada || tarefaSelecionada === '0') return alert('Por favor, selecione uma tarefa.');
+        if (!tarefaSelecionada || tarefaSelecionada === '0') return AppDialog.alert('Por favor, selecione uma tarefa.');
         ({ valor, tarefa, descricao } = parseTarefa(tarefaSelecionada));
 
         const optSel = selectTarefaSelect?.selectedOptions?.[0] || null;
         const catalogItem = Economy.config.services.find((s) => s.id === tarefa);
-        if (!catalogItem || !(valor > 0)) return alert('Selecione um serviço válido.');
-        if (catalogItem.realBenefit) {
-          window.requestRedemption({ credits: valor, serviceId: catalogItem.id, ...getEconomy().benefits[catalogItem.id], description: catalogItem.label });
-          return;
+        if (!catalogItem || !(valor > 0)) return AppDialog.alert('Selecione um serviço válido.');
+        if (tarefasBloqueadas.some((b) => b.nome === tarefa && b.expiraEm > Date.now())) return AppDialog.alert('Este item ainda está em cooldown.');
+        let quote;
+        try {
+          quote = Economy.serviceCost(getEconomy(), catalogItem, Number(document.getElementById('dinnerGuestCount').value), window.bonusEspecialAtivo);
+        } catch (error) {
+          return AppDialog.alert(error.message);
         }
-        if (tarefasBloqueadas.some((b) => b.nome === tarefa && b.expiraEm > Date.now())) return alert('Este item ainda está em cooldown.');
-        const originalCost = valor;
-        const receivesDiscount = !!window.bonusEspecialAtivo && !catalogItem.reduceHours && !tarefa.startsWith('ACELERAR_');
-        valor = Economy.adjusted(valor, 'cost', receivesDiscount, getEconomy());
-        if (!confirm('Confirmar compra de ' + catalogItem.label + ' por ' + valor.toLocaleString('pt-BR') + ' créditos?')) return;
+        const originalCost = quote.original;
+        const receivesDiscount = quote.discounted;
+        valor = quote.final;
+        if (!(await AppDialog.confirm('Confirmar compra de ' + catalogItem.label + ' por ' + formatBR(valor) + ' do Saldo Dominadora?'))) return;
 
         // ⚡ Aceleração Global
         if (/ACELERAR_GLOBAL_4D_1H/.test((selectTarefaSelect && selectTarefaSelect.value) || '')) {
           const custo = valor;
-          if (saldoDominadora < custo) return alert('Saldo insuficiente!');
+          if (saldoDominadora < custo) return AppDialog.alert('Saldo insuficiente!');
 
           const REDUZ_TOTAL_MS = 4 * 24 * 60 * 60 * 1000; // 4 dias
           const DURACAO_MS = Economy.config.reducerDurationMs; // 5 minutos
@@ -1077,12 +1078,12 @@ document.addEventListener('DOMContentLoaded', () => {
           if (cooldownMs > 0) {
             const jaBloqueado = tarefasBloqueadas.find((t) => t.nome === redutorId && t.expiraEm > agora);
             if (jaBloqueado) {
-              alert(`⏳ "${descricao || tarefa}" ainda está em cooldown.\nLibera em ${fmtTempoRestante(jaBloqueado.expiraEm - agora)}.`);
+              AppDialog.alert(`⏳ "${descricao || tarefa}" ainda está em cooldown.\nLibera em ${fmtTempoRestante(jaBloqueado.expiraEm - agora)}.`);
               return;
             }
           }
 
-          if (saldoDominadora < valor) return alert('Saldo insuficiente!');
+          if (saldoDominadora < valor) return AppDialog.alert('Saldo insuficiente!');
           saldoDominadora -= valor;
           atualizarSaldo();
 
@@ -1105,14 +1106,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ===== COMPRA NORMAL =====
-        if (saldoDominadora < valor) return alert('Saldo insuficiente!');
+        if (saldoDominadora < valor) return AppDialog.alert('Saldo insuficiente!');
 
         const agora = Date.now();
         const msBloqueio = getBloqueioMsPorTarefa(tarefa);
         if (msBloqueio > 0) {
           const bloqueada = tarefasBloqueadas.find((t) => t.nome === tarefa && t.expiraEm > agora);
           if (bloqueada) {
-            alert(`❌ "${tarefa}" ainda está bloqueada por tempo.\nLibera em ${fmtTempoRestante(bloqueada.expiraEm - agora)}.`);
+            AppDialog.alert(`❌ "${tarefa}" ainda está bloqueada por tempo.\nLibera em ${fmtTempoRestante(bloqueada.expiraEm - agora)}.`);
             return;
           }
           const expiraEm = agora + msBloqueio;
@@ -1129,7 +1130,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saldoDominadora -= valorFinal;
 
-        adicionarHistorico(tarefa, valorFinal, 'gasto', {
+        adicionarHistorico(tarefa === 'Cozinhar jantar' ? tarefa + ' · ' + document.getElementById('dinnerGuestCount').value + ' amiga(s)' : tarefa, valorFinal, 'gasto', {
           valorOriginal,
           valorFinal,
           diferenca,
@@ -1139,6 +1140,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const novaTarefa = {
           id: Date.now(),
           tarefa: tarefa,
+          taskCount: catalogItem.taskCount || 1,
+          ...(tarefa === 'Cozinhar jantar' ? { guestCount: Number(document.getElementById('dinnerGuestCount').value) } : {}),
           descricao: descricao,
           valor: valorFinal,
           timestamp: new Date().toISOString(),
@@ -1157,14 +1160,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // ===== GANHO =====
         const ganhoSelecionado = (selectGanhoSelect && selectGanhoSelect.value) || '';
         const valorInput = valorGanhoInput && valorGanhoInput.value;
-        if (!ganhoSelecionado || !valorInput || !Number.isFinite(Number(valorInput)) || Number(valorInput) <= 0) return alert('Por favor, selecione uma forma de ganho e insira um valor válido.');
+        if (!ganhoSelecionado || !valorInput || !Number.isFinite(Number(valorInput)) || Number(valorInput) <= 0) return AppDialog.alert('Por favor, selecione uma forma de ganho e insira um valor válido.');
 
         valor = Economy.round(Number(valorInput));
         if (getEconomy().gains[ganhoSelecionado] !== undefined) {
           calcularValorGanho();
           valor = Number(valorGanhoInput.value);
         }
-        if (!(valor > 0) || (!getEconomy().gains[ganhoSelecionado] && valor > getEconomy().manualGainMax)) return alert('Ganho manual acima do limite configurado.');
+        if (!(valor > 0) || (!getEconomy().gains[ganhoSelecionado] && valor > getEconomy().manualGainMax)) return AppDialog.alert('Ganho manual acima do limite configurado.');
         tarefa = ganhoSelecionado;
 
         // 🔥 Extra: detalhar "Pés na cara" com os checkboxes marcados
@@ -1280,7 +1283,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof releaseWakeLock === 'function') releaseWakeLock();
 
         const vpm = parseFloat(valorPorMinutoInput.value) || 0;
-        if (vpm <= 0) return alert('Insira um valor válido por minuto antes de terminar.');
+        if (vpm <= 0) return AppDialog.alert('Insira um valor válido por minuto antes de terminar.');
 
         let valorTotal = Economy.round(timerEarnedUnits / 6000);
 

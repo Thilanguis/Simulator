@@ -6,33 +6,21 @@
     <title>Findom</title>
 
     <link rel="manifest" href="manifest.json" />
+    <link rel="icon" type="image/png" href="icon-192.png" />
     <meta name="theme-color" content="#8b0000" />
 
     <link rel="stylesheet" href="css/app.css" />
     <link rel="stylesheet" href="css/bonusAtivoGPT.css" />
     <link rel="stylesheet" href="css/luzLateral.css" />
     <link rel="stylesheet" href="css/modern.css" />
+    <script type="module" src="firebaseConfiguration.js"></script>
   </head>
   <body>
-    <!-- Splash / Loading overlay -->
-    <div class="photo-container" id="splash" aria-hidden="true">
-      <div class="splash-card">
-        <div class="splash-aura"></div>
-        <div class="splash-logo-wrap">
-          <img src="icon-512.jpg" alt="Financial Dominance" class="splash-logo" />
-        </div>
-        <div class="splash-particles" aria-hidden="true"></div>
-        <div class="splash-title">FINANCIAL DOMINATION</div>
-        <div class="splash-sub">Carregando sua dominação financeira…</div>
-        <div class="splash-bar"><span class="splash-progress"></span></div>
-        <button class="splash-skip" type="button">Pular</button>
-      </div>
-    </div>
-
     <div class="container">
       <h1 id="simuladorTitulo">Findom Wallet</h1>
-      <p class="hint">Simulador consensual com créditos fictícios · finanças pessoais em um espaço separado.</p>
+      <p class="hint">Seu saldo, seus ganhos e seus serviços.</p>
       <div id="updateBanner" class="notice" role="status" hidden>
+        <progress id="updateProgress" max="100" value="0" hidden aria-label="Progresso da atualização"></progress>
         <span id="updateVersion">Nova versão disponível</span>
         <div class="btn-row">
           <button type="button" id="updateNow">Atualizar agora</button>
@@ -40,52 +28,18 @@
         </div>
       </div>
       <div id="storageWarning" role="alert" hidden></div>
-      <div class="summary-grid" aria-label="Resumo do aplicativo">
-        <div class="metric">
-          <span>Saldo fictício · créditos</span>
-          <strong id="homeCredits">0,00</strong>
-        </div>
-        <div class="metric">
-          <span>Total registrado · reais</span>
-          <strong id="homeTotal">0,00</strong>
-        </div>
-        <div class="metric">
-          <span>Compras pendentes · reais</span>
-          <strong id="homePending">R$ 0,00</strong>
-        </div>
-        <div class="metric">
-          <span>Orçamento restante</span>
-          <strong id="homeRemaining">R$ 0,00</strong>
-        </div>
-      </div>
       <nav class="app-nav" aria-label="Seções">
-        <button type="button" data-panel="simulator" aria-pressed="true">Simulador</button>
-        <button type="button" data-panel="financePanel" aria-pressed="false">Controle Financeiro</button>
+        <button type="button" data-panel="simulator" aria-pressed="true">Findom Wallet</button>
+        <button type="button" data-panel="financePanel" aria-pressed="false">Notas e gastos reais</button>
+        <button type="button" data-panel="contractPanel" aria-pressed="false">Contrato</button>
         <button type="button" data-panel="backupPanel" aria-pressed="false">Configurações</button>
       </nav>
       <main id="simulator" class="app-panel">
         <nav class="quick-nav" aria-label="Atalhos do simulador">
-          <button type="button" data-jump="ganho">Ganhar créditos</button>
+          <button type="button" data-jump="ganho">Ganho de Crédito</button>
           <button type="button" data-jump="gasto">Loja de serviços</button>
           <button type="button" data-jump="roleta">Roleta</button>
         </nav>
-        <section class="section">
-          <h2>Economia do simulador</h2>
-          <label for="economyMode">Modo econômico</label>
-          <select id="economyMode">
-            <option value="classic">Clássico · valores originais</option>
-            <option value="balanced">Equilibrado · progressão moderada</option>
-            <option value="custom">Personalizado</option>
-          </select>
-          <p id="timerLimits" class="hint"></p>
-          <details id="customEconomy" hidden>
-            <summary>Editar preços, ganhos e limites</summary>
-            <p class="hint">Edite os valores em créditos no JSON. Campos devem ser positivos, com até duas casas decimais. O histórico já registrado mantém seus valores.</p>
-            <label for="customEconomyJson">Configuração personalizada</label>
-            <textarea id="customEconomyJson" spellcheck="false"></textarea>
-            <button id="saveCustomEconomy" type="button">Salvar configuração</button>
-          </details>
-        </section>
 
         <div class="section">
           <div class="bonusActiveBanner">
@@ -97,10 +51,12 @@
             <span class="bonus-icon">💥</span>
           </div>
 
+          <p id="walletTimerSummary" class="hint wallet-timer-summary" data-timer-summary></p>
+
           <!-- cabeçalho com título + botão do contrato à direita -->
           <div class="section-header">
-            <h2>Saldo fictício</h2>
-            <button id="abrirContrato" class="icon-btn" title="Abrir contrato" onclick="window.open('💎 Contrato de Submissão e Resgate de Saldo.pdf', '_blank')">📜</button>
+            <h2>Controle de Saldo</h2>
+            <button type="button" id="abrirContrato" class="icon-btn" title="Abrir contrato">📜</button>
           </div>
 
           <!-- saldo em linha com o rótulo -->
@@ -132,6 +88,24 @@
           </div>
         </div>
 
+        <details class="section" id="contractOccurrences">
+          <summary>Registrar ocorrência do contrato</summary>
+          <p class="hint">Somente saldo interno. Registre quando uma regra for descumprida; nenhuma ocorrência é detectada automaticamente.</p>
+          <label>
+            Regra
+            <select id="contractOccurrenceType">
+              <option value="failurePenalty">Descumprimento de tarefa</option>
+              <option value="creamPenalty">Ocorrência da regra do creme</option>
+            </select>
+          </label>
+          <label>
+            Observação
+            <input id="contractOccurrenceNote" maxlength="500" placeholder="Descreva a ocorrência, se quiser" />
+          </label>
+          <p id="contractPenaltyPreview" class="hint"></p>
+          <button id="registerContractOccurrence" type="button">Registrar ocorrência</button>
+          <p id="contractOccurrenceMessage" class="hint" role="status"></p>
+        </details>
         <div class="section" id="tarefasLimitadasSection">
           <h2>⏳ Tarefas com Limite Ativo</h2>
           <div id="tarefasLimitadasLista">
@@ -143,7 +117,7 @@
         <div id="aceleracoesAtivas"></div>
         <section class="section" id="rouletteSection">
           <h2>Roleta e recompensas</h2>
-          <p class="hint">19 setores · uma rodada a cada 3 dias. Serviços e redutores sorteados são gratuitos e devem ser resgatados abaixo. Ofertas de benefício real exigem créditos e aprovação. O botão 🎰 abre a roleta.</p>
+          <p class="hint">19 setores · uma rodada a cada 3 dias. Serviços e redutores sorteados são gratuitos e devem ser resgatados abaixo. Os benefícios do catálogo são comprados com o Saldo Dominadora. O botão 🎰 abre a roleta.</p>
           <div id="roulettePrizeList"></div>
         </section>
 
@@ -165,6 +139,11 @@
               <optgroup label="👑 Redução de Limite 👑"></optgroup>
             </select>
 
+            <label id="dinnerGuestField" hidden>
+              Quantidade de amigas no jantar
+              <input id="dinnerGuestCount" type="number" min="0" max="100" step="1" value="0" />
+              <small id="dinnerGuestHint" class="hint"></small>
+            </label>
             <label>Descrição:</label>
             <input type="text" id="descricaoTransacao" readonly />
           </div>
@@ -183,11 +162,31 @@
               <option value="Outro">Outro (Valor editável)</option>
             </select>
 
+            <details id="gameScoreCalculator" hidden>
+              <summary>Calcular pela pontuação</summary>
+              <div class="form-grid">
+                <label>
+                  Pontos da Dominadora / total das amigas
+                  <input id="scoreWinner" type="number" min="0" step="1" value="0" />
+                </label>
+                <label>
+                  Pontos do Dominado
+                  <input id="scoreOther" type="number" min="0" step="1" value="0" />
+                </label>
+                <label>
+                  Valor por ponto (R$)
+                  <input id="scoreCoefficient" inputmode="decimal" placeholder="Ex.: 0,01" />
+                </label>
+              </div>
+              <p id="scorePreview" class="hint" role="status">Informe as pontuações e o valor por ponto.</p>
+              <button id="useScoreGain" type="button">Usar valor calculado</button>
+            </details>
             <label>
-              Valor (créditos):
+              Valor (R$):
               <input type="number" id="valorGanho" value="0" step="0.01" min="0.01" />
             </label>
 
+            <p class="hint">💲 Durante a sessão, estes itens ativam o aumento automático do valor por minuto. As atividades registradas também podem aumentar a taxa da sessão.</p>
             <div id="pesNaCaraOptions" class="checkbox-group" style="display: none">
               <label>
                 <input type="checkbox" id="chkChule" data-value="400" onchange="calcularValorGanho()" />
@@ -210,7 +209,7 @@
             <input type="number" id="quantidadeMultiplicador" value="1" min="1" style="display: none; margin-top: 8px" onchange="calcularValorGanho()" />
 
             <div id="contadorBloco" style="background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #444; margin-top: 20px">
-              <label>Créditos por minuto:</label>
+              <label>Valor por minuto (R$):</label>
               <input type="number" id="valorPorMinuto" value="0" min="0.01" step="0.01" readonly />
 
               <div id="contadorContainer" style="margin-top: 12px">
@@ -248,39 +247,51 @@
         </div>
       </main>
       <section id="financePanel" class="app-panel" hidden>
-        <div class="section" id="redemptionsSection">
-          <h2>Resgates e benefícios reais</h2>
-          <p class="hint">Solicitar reserva créditos. Aprovar não gera despesa. Concluir registra um pagamento ocorrido; cancelar/estornar devolve os créditos uma única vez. O aplicativo não faz transferências.</p>
-          <label>
-            Créditos para converter
-            <input id="redemptionCredits" type="number" min="1" step="0.01" value="100" />
-          </label>
-          <p id="redemptionQuote" class="notice"></p>
-          <button type="button" id="requestRedemption">Solicitar resgate</button>
-          <p id="redemptionMessage" role="status"></p>
-          <div id="redemptionList"></div>
-        </div>
         <div class="section">
-          <h2>Controle Financeiro</h2>
-          <p class="hint">Registros pessoais independentes dos créditos fictícios. Salário é uma categoria de gasto/compromisso nesta lista. Valores somente em dólar ficam separados.</p>
+          <h2>🎮 Resumo de Jogos e Finanças 💰</h2>
+          <p class="hint">Sua lista de jogos, compras e despesas fora do Findom Wallet. Valores somente em dólar ficam separados dos valores em reais.</p>
           <div id="financeMessage" role="status" aria-live="polite"></div>
-          <div class="form-grid">
-            <label>
-              Orçamento total (R$)
-              <input id="financeBudget" inputmode="decimal" placeholder="0,00" value="0,00" />
-            </label>
-            <button type="button" id="saveBudget">Salvar orçamento</button>
+          <div class="quick-nav finance-actions">
+            <button type="button" data-finance-jump="entry">Adicionar nota / gasto</button>
+            <button type="button" data-finance-jump="receipt">Enviar comprovante</button>
+            <button type="button" data-finance-jump="import">Importar lista</button>
           </div>
-          <p id="financeTotals" class="notice"></p>
-          <h3>Registros por categoria · filtro atual</h3>
-          <div id="categoryTotals"></div>
+          <div id="groupedFinanceList"></div>
+          <details id="financeIndicators">
+            <summary>Indicadores e orçamento</summary>
+            <div class="summary-grid" aria-label="Resumo dos gastos reais">
+              <div class="metric">
+                <span>Total registrado · reais</span>
+                <strong id="homeTotal">0,00</strong>
+              </div>
+            </div>
+
+            <details>
+              <summary>Orçamento (opcional)</summary>
+              <div class="form-grid">
+                <label>
+                  Orçamento total (R$)
+                  <input id="financeBudget" inputmode="decimal" placeholder="0,00" value="0,00" />
+                </label>
+                <button type="button" id="saveBudget">Salvar orçamento</button>
+              </div>
+              <p class="hint">
+                Restante do orçamento:
+                <strong id="homeRemaining">R$ 0,00</strong>
+              </p>
+            </details>
+            <p id="financeTotals" class="notice"></p>
+          </details>
+          <h3 hidden>Registros por categoria · filtro atual</h3>
+          <div id="categoryTotals" hidden></div>
         </div>
         <div class="section">
           <h2 id="entryTitle">Novo lançamento</h2>
           <form id="entryForm">
+            <p id="entryFeedback" class="notice" role="status" tabindex="-1" hidden></p>
             <div class="form-grid">
               <label>
-                Categoria
+                Tipo de nota / categoria
                 <select id="entryCategory" required></select>
               </label>
               <label>
@@ -288,7 +299,7 @@
                 <input id="entryStore" maxlength="200" placeholder="Ex.: Loja Aurora" />
               </label>
               <label>
-                Descrição
+                Nota / descrição
                 <input id="entryDescription" required maxlength="1000" placeholder="Ex.: Compra (1)" />
               </label>
               <label>
@@ -297,7 +308,7 @@
               </label>
               <label>
                 Valor original
-                <input id="entryAmount" inputmode="decimal" required placeholder="1.198,52" />
+                <input id="entryAmount" inputmode="decimal" required placeholder="511,22 ou 511.22" />
               </label>
               <label>
                 Moeda
@@ -309,13 +320,19 @@
               <label>
                 Situação
                 <select id="entryStatus">
-                  <option value="paid">Pago ✅</option>
-                  <option value="pending">Pendente ❌</option>
+                  <option value="paid">Gasto registrado ✅</option>
                   <option value="cancelled">Cancelado</option>
                   <option value="refunded">Reembolsado</option>
                 </select>
               </label>
             </div>
+            <details>
+              <summary>Adicionar observações</summary>
+              <label>
+                Observações
+                <textarea id="entryNote" maxlength="4000" placeholder="Detalhes do jogo, da compra ou do combinado."></textarea>
+              </label>
+            </details>
             <p id="entryOrigin" class="hint"></p>
             <button type="submit" id="saveEntry">Registrar lançamento</button>
             <button type="button" id="cancelEdit" class="subtle-btn" hidden>Cancelar edição</button>
@@ -324,7 +341,7 @@
         <div class="section">
           <h2>Importar lista ou comprovante</h2>
           <details>
-            <summary>Colar lista do WhatsApp</summary>
+            <summary id="importListToggle">Colar lista do WhatsApp</summary>
             <label>
               Data para itens sem data
               <input type="date" id="importDate" />
@@ -336,7 +353,7 @@
             <button type="button" id="previewImport">Analisar e mostrar prévia</button>
           </details>
           <details>
-            <summary>Ler imagem ou PDF com OCR local</summary>
+            <summary id="receiptToggle">Ler imagem ou PDF com OCR local</summary>
             <p class="hint">Até 12 MB e 10 páginas. A leitura acontece neste dispositivo. Nenhum comprovante é enviado ou salvo. A primeira leitura pode demorar para carregar o motor.</p>
             <label>
               Comprovante
@@ -354,13 +371,17 @@
           <div id="importPreview" hidden>
             <h3>Prévia · confira antes de salvar</h3>
             <div id="importWarnings" class="notice"></div>
-            <div id="importRows" class="scroll-area"></div>
+            <div id="importGroupedList"></div>
+            <details id="importReview">
+              <summary>Revisar campos e selecionar itens individualmente</summary>
+              <div id="importRows" class="scroll-area"></div>
+            </details>
             <button type="button" id="confirmImport">Confirmar itens selecionados</button>
             <button type="button" id="cancelImport" class="subtle-btn">Descartar prévia</button>
           </div>
         </div>
-        <div class="section">
-          <h2>Histórico financeiro</h2>
+        <details class="section" id="financeManager">
+          <summary>Gerenciar lançamentos e filtros</summary>
           <div class="filters">
             <label>
               De
@@ -382,14 +403,22 @@
               Situação
               <select id="financeStatus">
                 <option value="">Todas</option>
-                <option value="paid">Pago</option>
-                <option value="pending">Pendente</option>
+                <option value="paid">Gasto registrado</option>
                 <option value="cancelled">Cancelado</option>
                 <option value="refunded">Reembolsado</option>
               </select>
             </label>
           </div>
           <button type="button" id="clearFinanceFilters" class="subtle-btn">Limpar filtros</button>
+          <div class="bulk-finance-actions">
+            <label>
+              <input type="checkbox" id="selectAllFinance" />
+              Selecionar todos os lançamentos exibidos
+            </label>
+            <span id="financeSelectionCount" role="status" aria-live="polite">0 selecionados</span>
+            <button type="button" id="deleteSelectedFinance" class="danger" disabled>Excluir selecionados</button>
+          </div>
+          <p class="hint">“Selecionar todos” considera os filtros acima. Registros vinculados à integração anterior ficam protegidos.</p>
           <div id="financeHistory"></div>
           <details>
             <summary>Resumo para WhatsApp</summary>
@@ -404,80 +433,23 @@
             <summary>Registro de correções</summary>
             <div id="financeAudit"></div>
           </details>
-        </div>
+        </details>
       </section>
-      <dialog id="completionDialog">
-        <form id="completionForm">
-          <h2>Confirmar pagamento do resgate</h2>
-          <p class="hint">Preencha o valor efetivamente pago. Você pode usar reais mesmo quando o benefício foi cotado em dólares.</p>
-          <label>
-            Valor pago
-            <input id="completionAmount" required inputmode="decimal" />
-          </label>
-          <label>
-            Moeda
-            <select id="completionCurrency">
-              <option value="BRL">BRL</option>
-              <option value="USD">USD</option>
-            </select>
-          </label>
-          <label>
-            Data
-            <input id="completionDate" type="date" required />
-          </label>
-          <label>
-            Estabelecimento
-            <input id="completionStore" maxlength="200" />
-          </label>
-          <label>
-            Categoria
-            <select id="completionCategory"></select>
-          </label>
-          <p id="completionError" role="alert"></p>
-          <button type="submit">Confirmar pagamento ocorrido</button>
-          <button type="button" id="cancelCompletion">Cancelar</button>
-        </form>
-      </dialog>
       <section id="backupPanel" class="app-panel section" hidden>
         <h2>Configurações e backup</h2>
-        <button type="button" id="checkUpdate">Verificar atualização</button>
-        <details>
-          <summary>Conversão, benefícios e limites de resgate</summary>
-          <p class="hint">
-            Resgates começam desativados. Configure a conversão em centavos reais por crédito. Zero desativa um limite opcional. Orçamentos incluem reservas e resgates concluídos na moeda indicada. Alterações não recalculam solicitações antigas.
-          </p>
-          <label>
-            <input id="redemptionEnabled" type="checkbox" />
-            Habilitar solicitações de resgate
-          </label>
-          <div class="form-grid">
-            <label>
-              Centavos de real por crédito
-              <input id="conversionRate" type="number" min="1" step="1" />
-            </label>
-            <label>
-              Mínimo de créditos
-              <input id="redemptionMin" type="number" min="1" step="1" />
-            </label>
-            <label>
-              Máximo de créditos por resgate (0 = livre)
-              <input id="redemptionMax" type="number" min="0" step="1" />
-            </label>
-            <label>
-              Máximo de solicitações abertas (0 = livre)
-              <input id="redemptionMaxOpen" type="number" min="0" step="1" />
-            </label>
-            <label>
-              Orçamento de resgates BRL (0 = livre)
-              <input id="redemptionBudget" inputmode="decimal" />
-            </label>
-            <label>
-              Orçamento de resgates USD (0 = livre)
-              <input id="redemptionUsdBudget" inputmode="decimal" />
-            </label>
-          </div>
-          <button type="button" id="saveRedemptionRules">Salvar regras de resgate</button>
-        </details>
+        <section id="economySettingsPanel" class="section">
+          <h2>Economia do simulador</h2>
+          <p id="timerLimits" class="hint" data-timer-summary></p>
+          <details id="customEconomy">
+            <summary>Editar preços, ganhos e limites</summary>
+            <p class="hint">Edite os arrays e salve. “price” é o preço do serviço; “amount” é o ganho, em R$. Acrescente um objeto para criar um item. “timerEligible”: true marca com 💲.</p>
+            <label for="customEconomyJson">Código do catálogo (JSON)</label>
+            <textarea id="customEconomyJson" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off"></textarea>
+            <p id="economyCodeMessage" role="status" class="hint"></p>
+            <button id="saveCustomEconomy" type="button">Salvar alterações</button>
+          </details>
+        </section>
+
         <p>Os dados são salvos neste navegador e neste endereço do site. Exporte regularmente um backup privado para evitar perda ao limpar o navegador ou trocar de dispositivo.</p>
         <p class="hint">O backup JSON contém o simulador, bloqueios, bônus, roleta, sessão pausada, configuração e os registros financeiros. Ele contém dados pessoais: guarde em local privado. Não há sincronização automática entre dispositivos.</p>
         <button type="button" id="exportBackup">Baixar backup JSON completo</button>
@@ -490,17 +462,28 @@
         <button type="button" id="confirmBackup" hidden>Confirmar substituição dos dados locais</button>
         <p id="backupMessage" role="status"></p>
       </section>
-      <footer>Findom Wallet · dados no dispositivo · créditos fictícios e reais separados</footer>
+      <section id="contractPanel" class="app-panel" hidden>
+        <div class="contract-toolbar">
+          <button type="button" id="editContractValues">Editar valores e regras</button>
+          <button type="button" id="printContract">Imprimir / salvar PDF</button>
+          <a href="💎 Contrato de Submissão e Resgate de Saldo.pdf" target="_blank" rel="noopener">Ver PDF original</a>
+        </div>
+        <p class="hint">Valores e regras operacionais acompanham o catálogo atual. O PDF original permanece como referência.</p>
+        <article id="contractDocument" class="contract-document"></article>
+      </section>
+      <footer>Findom Wallet · dados no dispositivo · saldo interno e gastos reais em áreas separadas</footer>
     </div>
 
     <!-- Camada das chamas -->
     <canvas id="fx-embers" aria-hidden="true"></canvas>
 
+    <script defer src="js/dialogs.js"></script>
     <script defer src="js/vault.js"></script>
     <script defer src="js/economy-config.js"></script>
     <script defer src="js/finance.js"></script>
     <script defer src="js/persistence.js"></script>
     <script defer src="js/economy.js"></script>
+    <script defer src="js/economy-catalog.js"></script>
     <script defer src="js/economy-ui.js"></script>
     <script defer src="js/storage.js"></script>
     <script defer src="js/utils.js"></script>
@@ -508,6 +491,7 @@
     <script defer src="js/splashAmimacao.js"></script>
     <script defer src="js/bonusEspecial.js"></script>
     <script defer src="js/ganhoFixo.js"></script>
+    <script defer src="js/contract-rules.js"></script>
     <script defer src="js/tarefasPendentes.js"></script>
     <script defer src="js/timer.js"></script>
     <script defer src="js/serviceWorker.js"></script>
@@ -519,9 +503,10 @@
     <script defer src="js/roulette-rewards.js"></script>
     <script defer src="js/receipt.js"></script>
     <script defer src="js/ocr.js"></script>
+    <script defer src="js/finance-list.js"></script>
     <script defer src="js/finance-ui.js"></script>
     <script defer src="js/redemptions.js"></script>
-    <script defer src="js/redemptions-ui.js"></script>
     <script defer src="js/backup.js"></script>
+    <script defer src="js/contract-view.js"></script>
   </body>
 </html>

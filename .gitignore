@@ -4,3 +4,7 @@ playwright-report/
 .local/
 *.log
 dist/
+
+vendor/
+.local-backups/
+firebaseConfiguration.js

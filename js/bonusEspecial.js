@@ -14,11 +14,7 @@
 
   // ----------------- Helpers numéricos -----------------
   function bonusFmtBR(n) {
-    var num = Number(n) || 0;
-    return num.toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    return formatBR(Number(n) || 0);
   }
 
   function bonusParseBR(text) {
@@ -167,7 +163,7 @@
 
       var textNode = document.getElementById('bonusEspecialBannerText');
       if (textNode) {
-        textNode.textContent = 'Bônus x' + mult.toLocaleString('pt-BR') + ' aplicado em todos os créditos enquanto a langerie especial estiver ativa.';
+        textNode.textContent = 'Bônus x' + mult.toLocaleString('pt-BR') + ' aplicado em todos os ganhos enquanto a langerie especial estiver ativa.';
       }
     } catch (e) {}
   }

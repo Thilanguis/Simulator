@@ -10,6 +10,7 @@
     const base = mode === 'classic' ? 'classic' : 'balanced';
     return {
       mode,
+      contractRules: { ...config.contractRules },
       bonusPercent: config.bonusPercent,
       discountPercent: config.discountPercent,
       rouletteWeights: Object.fromEntries(config.roulette.map((s) => [s.label, s.weight])),
@@ -35,6 +36,12 @@
         result[group][key] = n;
       }
     }
+    const rules = input.contractRules || config.contractRules;
+    for (const key of Object.keys(config.contractRules)) {
+      const value = rules[key];
+      if (!Number.isFinite(value) || value < 0 || value > 1000000 || round(value) !== value) throw new Error('Valor inválido em contractRules: ' + key);
+      result.contractRules[key] = value;
+    }
     for (const key of ['quantityMax', 'manualGainMax']) {
       const n = input[key];
       if (!Number.isFinite(n) || n <= 0 || n > 1000000) throw new Error('Limite inválido: ' + key);
@@ -49,17 +56,45 @@
       if (!b || !['BRL', 'USD'].includes(b.currency) || !Number.isSafeInteger(b.amount) || b.amount <= 0) throw new Error('Benefício real inválido.');
       result.benefits[id] = { currency: b.currency, amount: b.amount };
     }
-    if (result.timer.maxRate < result.timer.base || !Number.isInteger(result.timer.autoEvery) || !Number.isInteger(result.quantityMax)) throw new Error('Limites do cronômetro/quantidade inválidos.');
+    if (!Number.isInteger(result.timer.autoEvery) || !Number.isInteger(result.quantityMax)) throw new Error('Limites do cronômetro/quantidade inválidos.');
     return result;
+  }
+  function syncCatalog(saved, baseline) {
+    const source = defaults('custom');
+    if (!saved || saved.mode !== 'custom') return defaults('balanced');
+    const next = { ...saved };
+    for (const group of ['prices', 'gains', 'extras', 'games', 'timer', 'rouletteWeights', 'benefits', 'contractRules']) {
+      next[group] = { ...source[group], ...saved[group] };
+      for (const key of Object.keys(source[group])) {
+        if (baseline?.[group] && JSON.stringify(baseline[group][key]) !== JSON.stringify(source[group][key])) next[group][key] = source[group][key];
+      }
+    }
+    for (const key of ['quantityMax', 'manualGainMax', 'bonusPercent', 'discountPercent']) {
+      if (baseline && baseline[key] !== source[key]) next[key] = source[key];
+    }
+    if (!baseline && saved.timer?.autoEvery === 60) {
+      if (saved.timer.autoIncrement === 0.05) next.timer.autoIncrement = source.timer.autoIncrement;
+      if (saved.timer.taskScale === 0.025) next.timer.taskScale = source.timer.taskScale;
+      if (saved.timer.repeatIncrement === 0.01) next.timer.repeatIncrement = source.timer.repeatIncrement;
+    }
+    return validate(next);
   }
   function gain(settings, id, quantity = 1, extras = []) {
     let amount = settings.gains[id] ?? settings.games[id] ?? 0;
     for (const extra of extras) amount += settings.extras[extra] || 0;
-    if (id === config.gains[1].id) amount *= Math.min(settings.quantityMax, Math.max(1, Math.floor(Number(quantity) || 1)));
+    if (id === 'Tapa de pé na cara') amount *= Math.min(settings.quantityMax, Math.max(1, Math.floor(Number(quantity) || 1)));
     return round(amount);
   }
   function adjusted(value, kind, active, settings = config) {
     return round(value * (active ? (kind === 'gain' ? 1 + settings.bonusPercent / 100 : 1 - settings.discountPercent / 100) : 1));
+  }
+  function serviceCost(settings, item, guests = 0, bonus = false) {
+    if (!Number.isSafeInteger(guests) || guests < 0 || guests > 100) throw new Error('Informe de 0 a 100 amigas.');
+    const extra = item.id === 'Cozinhar jantar' ? guests * settings.contractRules.dinnerGuestPrice : 0;
+    const original = round(settings.prices[item.id] + extra);
+    if (!Number.isFinite(original) || original <= 0) throw new Error('Preço inválido.');
+    const discounted = !!bonus && !item.reduceHours && !item.id.startsWith('ACELERAR_');
+    return { original, extra: round(extra), discounted, final: adjusted(original, 'cost', discounted, settings) };
   }
   function taskIncrement(value, settings) {
     if (!(value > 0)) return 0;
@@ -68,13 +103,12 @@
   }
   function step(state, seconds, settings, eligible = false) {
     const result = { ...state };
-    const limit = Math.floor(settings.timer.maxMinutes * 60);
-    const end = Math.min(limit, result.seconds + Math.max(0, Math.floor(seconds)));
+    const end = result.seconds + Math.max(0, Math.floor(seconds));
     // Integrate each earned interval at its actual rate; increases never reprice past time.
     while (result.seconds < end) {
       result.earnedUnits = (result.earnedUnits || 0) + Math.round(result.rate * 100);
       result.seconds++;
-      if (eligible && result.seconds % settings.timer.autoEvery === 0) result.rate = Math.min(settings.timer.maxRate, round(result.rate + settings.timer.autoIncrement));
+      if (eligible && result.seconds % settings.timer.autoEvery === 0) result.rate = round(result.rate + settings.timer.autoIncrement);
     }
     return result;
   }
@@ -87,5 +121,5 @@
     }
     return weights.length - 1;
   }
-  return { config, round, defaults, validate, gain, adjusted, taskIncrement, step, drawRoulette };
+  return { config, round, defaults, validate, syncCatalog, gain, adjusted, serviceCost, taskIncrement, step, drawRoulette };
 });

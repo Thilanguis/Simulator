@@ -254,10 +254,7 @@ summary {
   min-height: 280px;
   font-family: monospace;
 }
-#simulator .saldo-row span::after {
-  content: ' créditos';
-  font-size: 12px;
-}
+
 #simulator .tarefa-item {
   flex-wrap: wrap;
 }
@@ -324,8 +321,11 @@ dialog button {
   overflow: hidden;
 }
 #simuladorTitulo {
-  color: var(--gold);
-  text-shadow: 0 0 14px #9c242d55;
+  color: #800080;
+  text-shadow:
+    0 0 5px #800080,
+    0 0 10px #800080,
+    0 0 15px #800080;
   overflow: clip;
 }
 #updateBanner {
@@ -380,3 +380,651 @@ dialog button {
     font-size: 19px;
   }
 }
+
+#simuladorTitulo.bonus-title-active {
+  color: #ffd700;
+  text-shadow: 0 0 12px #ffd70066;
+}
+#financePanel .summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.finance-actions button {
+  white-space: normal;
+}
+.finance-note {
+  white-space: pre-wrap;
+}
+.category-note {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.notebook-group {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 17px;
+  line-height: 1.65;
+}
+.notebook-group h3 {
+  font-size: 21px;
+  color: var(--gold);
+  margin: 0 0 14px;
+}
+.notebook-group ul {
+  padding-left: 24px;
+  margin: 0;
+}
+.notebook-line {
+  padding: 4px 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.notebook-line.cancelled,
+.notebook-line.refunded {
+  opacity: 0.6;
+}
+.notebook-subtotal {
+  margin: 16px 0 0;
+  font-weight: bold;
+}
+.notebook-final ol {
+  padding-left: 24px;
+}
+.notebook-final li {
+  padding: 5px 0;
+}
+.notebook-final li strong {
+  float: right;
+  margin-left: 16px;
+}
+.notebook-grand-total {
+  font-size: 22px;
+  font-weight: bold;
+  color: var(--gold);
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+#financeManager > summary {
+  font-size: 18px;
+}
+#financeIndicators {
+  margin-top: 20px;
+}
+@media (max-width: 600px) {
+  .notebook-group {
+    font-size: 16px;
+    padding: 20px 0;
+  }
+  .notebook-group h3 {
+    font-size: 18px;
+  }
+  .notebook-final li strong {
+    float: none;
+    display: block;
+    margin-left: 0;
+  }
+  .notebook-grand-total {
+    font-size: 19px;
+  }
+}
+
+.bulk-finance-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.bulk-finance-actions label,
+.entry-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  text-transform: none;
+}
+.bulk-finance-actions input,
+.entry-select input {
+  flex: 0 0 20px;
+  margin: 0;
+}
+.entry-select {
+  font-weight: normal;
+  color: inherit;
+}
+.bulk-finance-actions span {
+  font: 13px system-ui;
+  color: var(--muted);
+}
+
+#economyFields {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(180px, 2fr) 110px auto;
+  gap: 12px;
+  align-items: end;
+}
+#economyFields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+}
+#economyFields input,
+#economyFields select,
+#economyFields button {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 8px 10px;
+  margin: 0;
+  font: 14px system-ui;
+}
+#economySaved:empty {
+  display: none;
+}
+@media (max-width: 700px) {
+  #economyFields {
+    grid-template-columns: minmax(0, 1fr) 110px;
+  }
+  #economyFields label:nth-child(1),
+  #economyFields label:nth-child(2) {
+    grid-column: 1 / -1;
+  }
+}
+
+html.dialog-open {
+  overflow: hidden;
+}
+.app-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  margin: auto;
+  padding: 30px;
+  overflow-y: auto;
+  border: 1px solid #66513b;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #24201d, #171615);
+  color: #f5eee5;
+  box-shadow: 0 28px 100px #000b;
+  text-align: left;
+  animation: dialog-appear 0.16s ease-out;
+}
+.app-dialog::backdrop {
+  background: #080505ba;
+  backdrop-filter: blur(5px);
+}
+.app-dialog h2 {
+  margin: 18px 0 10px;
+  padding: 0;
+  border: 0;
+  font:
+    600 22px/1.3 Georgia,
+    serif;
+  color: var(--gold);
+}
+.app-dialog p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #cec5bb;
+  font: 14px/1.7 system-ui;
+}
+.app-dialog-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #aa8847;
+  border-radius: 14px;
+  background: #e9c66a14;
+  color: var(--gold);
+  font:
+    600 24px Georgia,
+    serif;
+}
+.app-dialog-danger .app-dialog-icon {
+  color: #ffc4bd;
+  border-color: #a74c49;
+  background: #a8383826;
+}
+.app-dialog .app-dialog-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #bfb4a7;
+  font: 26px system-ui;
+}
+.app-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+.app-dialog-actions button {
+  flex: 1;
+  margin: 0;
+  width: auto;
+  padding: 11px 16px;
+  border-radius: 10px;
+  font: 600 14px system-ui;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.app-dialog [data-dialog-cancel] {
+  background: #302b26;
+  border: 1px solid #55493b;
+  color: #e3d9cb;
+}
+.app-dialog [data-dialog-confirm] {
+  background: var(--gold);
+  color: #211a0e;
+  border: 1px solid var(--gold);
+}
+.app-dialog-danger [data-dialog-confirm] {
+  background: #a4303c;
+  color: white;
+  border-color: #bd4c54;
+}
+@keyframes dialog-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-dialog {
+    animation: none;
+  }
+}
+
+#groupedFinanceList .notebook-group ul {
+  padding-left: 0;
+  list-style: none;
+}
+.notebook-editable {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 0;
+}
+.note-content {
+  flex: 0 1 auto;
+  min-width: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.note-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.note-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  box-shadow: none;
+  color: #a99d8c;
+  font: 21px/1 system-ui;
+}
+.note-icon:hover,
+.note-icon:focus-visible {
+  background: #e9c66a14;
+  color: var(--gold);
+  border-color: var(--line);
+}
+.note-delete:hover {
+  color: #ff9999;
+  background: #9c242d22;
+}
+.note-icon svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.note-grip {
+  cursor: grab;
+  touch-action: none;
+  color: #746b60;
+}
+.note-grip:active {
+  cursor: grabbing;
+}
+.note-drop {
+  outline: 1px dashed var(--gold);
+  outline-offset: 3px;
+  background: #e9c66a0c;
+}
+.note-edit-dialog {
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: 24px;
+  border: 1px solid #66513b;
+  border-radius: 18px;
+  background: #1b1917;
+  color: #f5eee5;
+}
+.note-edit-dialog::backdrop {
+  background: #080505ba;
+  backdrop-filter: blur(5px);
+}
+.note-editor-close {
+  float: right;
+  width: 32px;
+  min-height: 32px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: #c9bbac;
+  font-size: 24px;
+}
+html:has(dialog[open]) {
+  overflow: hidden;
+}
+.note-edit-dialog h2 {
+  margin-top: 4px;
+}
+.note-edit-dialog .form-grid {
+  gap: 12px;
+}
+.note-edit-dialog input,
+.note-edit-dialog select {
+  min-height: 40px;
+  padding: 8px;
+}
+#financeHistory .finance-entry {
+  font-size: 14px;
+  padding: 10px 0;
+}
+#financeHistory .finance-entry p {
+  margin: 4px 0;
+}
+#financeHistory .finance-entry button {
+  min-height: 32px;
+  padding: 6px 9px;
+  font-size: 11px;
+  margin-top: 6px;
+}
+@media (max-width: 600px) {
+  .note-content {
+    flex: 1;
+  }
+  .note-icon {
+    width: 30px;
+    height: 32px;
+    min-height: 32px;
+  }
+  .notebook-editable {
+    gap: 4px;
+  }
+  .note-edit-dialog {
+    padding: 18px;
+  }
+}
+
+#customEconomyJson {
+  height: 320px;
+  min-height: 220px;
+  max-height: 65vh;
+  font:
+    13px/1.6 Consolas,
+    monospace;
+  tab-size: 2;
+  white-space: pre;
+  color: #e1d3a9;
+  background: #111110;
+  resize: vertical;
+}
+
+.purchase-bonus-preview {
+  margin: 10px 0 14px;
+  font: 12px/1.6 system-ui;
+  color: #d1c089;
+}
+.purchase-bonus-values {
+  margin: 0 0 5px;
+}
+.purchase-bonus-values s {
+  opacity: 0.6;
+  margin-right: 7px;
+}
+.purchase-bonus-values strong {
+  color: #a7f3d0;
+  font-size: 14px;
+}
+.purchase-bonus-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid #34d399d9;
+  border-radius: 999px;
+  background: #064e3bd9;
+  color: #bbf7d0;
+  font-weight: 800;
+  box-shadow: inset 0 0 12px #10b98140;
+}
+.purchase-bonus-chip b {
+  padding: 1px 6px;
+  border: 1px solid #10b981e6;
+  border-radius: 999px;
+  background: #16a34a59;
+}
+.purchase-bonus-saved {
+  display: inline-block;
+  margin-left: 10px;
+  color: #a7f3d0;
+}
+#economySettingsPanel {
+  margin-top: 20px;
+}
+
+.wallet-timer-summary {
+  margin: 6px 0 14px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.task-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.task-steps label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  font: 12px system-ui;
+  white-space: nowrap;
+}
+.task-steps input {
+  margin: 0;
+}
+#gameScoreCalculator {
+  margin: 12px 0;
+}
+
+#updateProgress {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin-bottom: 10px;
+  accent-color: var(--gold);
+}
+.contract-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.contract-toolbar button {
+  width: auto;
+  margin: 0;
+}
+.contract-toolbar a {
+  color: var(--gold);
+  font: 13px system-ui;
+}
+.contract-document {
+  background: #fffdf8;
+  color: #25221e;
+  border: 1px solid #d4c9b9;
+  border-radius: 8px;
+  padding: clamp(20px, 5vw, 52px);
+  font:
+    15px/1.65 Georgia,
+    serif;
+  overflow-wrap: anywhere;
+  box-shadow: 0 12px 40px #0005;
+}
+.contract-document header {
+  border-bottom: 2px solid #b99551;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+}
+.contract-document h1 {
+  color: #302719;
+  text-shadow: none;
+  font:
+    bold clamp(23px, 3vw, 31px)/1.3 Georgia,
+    serif;
+  border: 0;
+  animation: none;
+  letter-spacing: 0;
+  margin: 0;
+}
+.contract-document h2 {
+  color: #302719;
+  border: 0;
+  padding: 0;
+  font:
+    bold 21px/1.4 Georgia,
+    serif;
+  text-transform: none;
+  margin: 30px 0 12px;
+}
+.contract-document h3 {
+  color: #554327;
+  font-size: 17px;
+}
+.contract-document p {
+  color: inherit;
+}
+.contract-document table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #25221e;
+  background: transparent;
+  text-align: left;
+  font:
+    14px/1.5 Georgia,
+    serif;
+}
+.contract-document th,
+.contract-document td {
+  border: 1px solid #a99d8c;
+  padding: 10px;
+  vertical-align: top;
+}
+.contract-document th {
+  background: #eee5d7;
+  color: #302719;
+}
+.contract-document td:nth-child(2) {
+  white-space: nowrap;
+}
+.contract-table-wrap {
+  overflow-x: auto;
+}
+.contract-document li {
+  margin: 8px 0;
+}
+.contract-signatures {
+  margin-top: 36px;
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+  }
+  body > :not(.container),
+  .container > :not(#contractPanel),
+  #contractPanel > :not(#contractDocument) {
+    display: none !important;
+  }
+  .container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+  }
+  #contractPanel {
+    display: block !important;
+  }
+  .contract-document {
+    box-shadow: none !important;
+    border: 0;
+    padding: 0;
+    font-size: 11pt;
+  }
+  .contract-document h2,
+  .contract-document h3 {
+    break-after: avoid;
+  }
+  .contract-document tr {
+    break-inside: avoid;
+  }
+  .contract-table-wrap {
+    overflow: visible;
+  }
+  .contract-document thead {
+    display: table-header-group;
+  }
+}
+
+.contract-document h1 { white-space: normal; overflow-wrap: anywhere; }
+.contract-document, .contract-table-wrap { min-width: 0; max-width: 100%; }

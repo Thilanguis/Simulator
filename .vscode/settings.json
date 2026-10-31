@@ -1,0 +1,16 @@
+{
+  "liveServer.settings.port": 5501,
+  "liveServer.settings.root": "/",
+  "liveServer.settings.ignoreFiles": [
+    "**/.git/**",
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/dist/**",
+    "**/.local/**",
+    "**/.local-backups/**",
+    "**/tests/**",
+    "**/test-results/**",
+    "**/docs/**"
+  ],
+  "git.autoRepositoryDetection": true
+}

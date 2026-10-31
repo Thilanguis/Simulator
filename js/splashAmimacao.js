@@ -1,80 +1,4 @@
-/* =================================================================== */
-/* SPLASH SCREEN                             */
-/* =================================================================== */
-
-(function () {
-  const splash = document.getElementById('splash');
-  if (!splash) return;
-  const skipBtn = splash.querySelector('.splash-skip');
-  const hide = () => {
-    splash.classList.add('hide');
-    setTimeout(() => splash.remove(), 650);
-  };
-  window.addEventListener('load', () => setTimeout(hide, 5200));
-  skipBtn && skipBtn.addEventListener('click', hide);
-  splash.addEventListener('click', (e) => {
-    if (e.target === splash) hide();
-  });
-})();
-
-(function enhanceSplash() {
-  const splash = document.getElementById('splash');
-  if (!splash) return;
-  const card = splash.querySelector('.splash-card');
-  const particles = splash.querySelector('.splash-particles');
-  const symbols = ['$', '€', '¥', '£', '₿', '¢', '₩', '₹', '%'];
-  const count = 28;
-
-  for (let i = 0; i < count; i++) {
-    const s = document.createElement('span');
-    s.className = 'p';
-    s.textContent = symbols[Math.floor(Math.random() * symbols.length)];
-    const delay = (Math.random() * 3).toFixed(2) + 's';
-    const dur = (4 + Math.random() * 3).toFixed(2) + 's';
-    const x = (Math.random() * 240 - 120).toFixed(0) + 'px';
-    const rot = (Math.random() * 120 - 60).toFixed(0) + 'deg';
-    s.style.setProperty('--delay', delay);
-    s.style.setProperty('--dur', dur);
-    s.style.setProperty('--x', x);
-    s.style.setProperty('--rot', rot);
-    s.style.left = 40 + Math.random() * 20 + '%';
-    s.style.bottom = '-10%';
-    s.style.fontSize = (14 + Math.random() * 12).toFixed(0) + 'px';
-    particles.appendChild(s);
-  }
-
-  function createParticle(x, y, hue) {
-    const p = document.createElement('div');
-    p.className = 'fire-particle';
-    const sat = 89; // Saturação
-    const light = 40; // Brilho
-    p.style.background = `hsl(${hue} ${sat}% ${light}%)`;
-    p.style.left = x + 'px';
-    p.style.top = y + 'px';
-    document.body.appendChild(p);
-    return p;
-  }
-
-  function handleMove(e) {
-    const r = card.getBoundingClientRect();
-    const cx = r.left + r.width / 2;
-    const cy = r.top + r.height / 2;
-    const dx = (e.clientX - cx) / (r.width / 2);
-    const dy = (e.clientY - cy) / (r.height / 2);
-    const maxTilt = 6;
-    const rx = (dy * -maxTilt).toFixed(2);
-    const ry = (dx * maxTilt).toFixed(2);
-    card.classList.add('tilt');
-    card.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
-  }
-  function resetTilt() {
-    card.classList.remove('tilt');
-    card.style.transform = '';
-  }
-  splash.addEventListener('mousemove', handleMove);
-  splash.addEventListener('mouseleave', resetTilt);
-})();
-
+/* Animação do título do Wallet. A tela de carregamento foi removida. */
 const titulo = document.querySelector('#simuladorTitulo');
 const letras = titulo.textContent.split('');
 
@@ -112,9 +36,12 @@ function flickerAndSpark() {
       }
 
       // Volta letra ao normal
-      setTimeout(() => {
-        span.style.opacity = 1;
-      }, 100 + Math.random() * 300);
+      setTimeout(
+        () => {
+          span.style.opacity = 1;
+        },
+        100 + Math.random() * 300,
+      );
     }
   });
 
@@ -125,6 +52,7 @@ const bonusCheckbox = document.getElementById('bonusEspecialCheckbox');
 
 function updateTituloColor() {
   const spans = titulo.querySelectorAll('span');
+  titulo.classList.toggle('bonus-title-active', bonusCheckbox.checked);
   if (bonusCheckbox.checked) {
     spans.forEach((span) => {
       // Aplica gradiente como cor

@@ -93,6 +93,7 @@
 
   function applyBonusStateToUI(checkbox) {
     window.bonusEspecialAtivo = !!(checkbox && checkbox.checked);
+    if (typeof window.updateTituloColor === 'function') window.updateTituloColor();
     try {
       AppStorage.setItem(BONUS_KEY, JSON.stringify(window.bonusEspecialAtivo));
     } catch (e) {}

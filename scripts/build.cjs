@@ -4,26 +4,10 @@ const fs = require('node:fs'),
 const root = path.resolve(__dirname, '..'),
   dest = path.join(root, 'dist');
 fs.mkdirSync(dest, { recursive: true });
-const copy = (from, to) => {
-  if (fs.statSync(from).isDirectory()) {
-    fs.mkdirSync(to, { recursive: true });
-    for (const name of fs.readdirSync(from)) copy(path.join(from, name), path.join(to, name));
-  } else {
-    fs.mkdirSync(path.dirname(to), { recursive: true });
-    fs.copyFileSync(from, to);
-  }
-};
+const { copy, prepareAssets } = require('./local-assets.cjs');
 for (const name of ['index.html', 'manifest.json', 'css', 'js', 'icon-192.png', 'icon-512.jpg', '💎 Contrato de Submissão e Resgate de Saldo.pdf']) copy(path.join(root, name), path.join(dest, name));
-const vendor = path.join(dest, 'vendor');
-for (const name of ['tesseract.min.js', 'worker.min.js']) copy(path.join(root, 'node_modules/tesseract.js/dist', name), path.join(vendor, 'tesseract', name));
-for (const name of fs.readdirSync(path.join(root, 'node_modules/tesseract.js-core')).filter((n) => /\.wasm(?:\.js)?$/.test(n))) copy(path.join(root, 'node_modules/tesseract.js-core', name), path.join(vendor, 'core', name));
-for (const name of ['pdf.mjs', 'pdf.worker.mjs']) copy(path.join(root, 'node_modules/pdfjs-dist/build', name), path.join(vendor, 'pdf', name));
-for (const lang of ['por', 'eng']) copy(path.join(root, 'node_modules/@tesseract.js-data', lang, '4.0.0', lang + '.traineddata.gz'), path.join(vendor, 'lang', lang + '.traineddata.gz'));
-for (const name of ['tesseract.js', 'tesseract.js-core', 'pdfjs-dist', '@tesseract.js-data/por', '@tesseract.js-data/eng']) {
-  const packageRoot = path.join(root, 'node_modules', name);
-  const license = fs.readdirSync(packageRoot).find((n) => /^license/i.test(n));
-  if (license) copy(path.join(packageRoot, license), path.join(vendor, 'licenses', name.replaceAll('/', '-') + '-' + license));
-}
+prepareAssets(root, dest);
+if (fs.existsSync(path.join(root, 'firebaseConfiguration.js'))) copy(path.join(root, 'firebaseConfiguration.js'), path.join(dest, 'firebaseConfiguration.js'));
 const files = [];
 function walk(dir) {
   for (const ent of fs.readdirSync(dir, { withFileTypes: true })) {

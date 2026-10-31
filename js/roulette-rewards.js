@@ -12,15 +12,15 @@ document.addEventListener('DOMContentLoaded', () => {
         )
         .join('') || '<p class="hint">Seus resultados aparecerão aqui.</p>';
   }
-  container.onclick = (event) => {
+  container.onclick = async (event) => {
     const button = event.target.closest('[data-claim]');
     if (!button) return;
     const awards = JSON.parse(AppStorage.getItem('rouletteAwards') || '[]'),
       award = awards.find((a) => a.id === button.dataset.claim);
     if (!award || award.claimed) return;
     const blocks = JSON.parse(AppStorage.getItem('tarefasBloqueadas') || '[]');
-    if (award.serviceId && blocks.some((b) => b.nome === award.serviceId && b.expiraEm > Date.now())) return alert('O serviço ainda está bloqueado. O prêmio ficará disponível para resgatar após o cooldown.');
-    if (!confirm('Resgatar este prêmio gratuito? Nenhum crédito será descontado.')) return;
+    if (award.serviceId && blocks.some((b) => b.nome === award.serviceId && b.expiraEm > Date.now())) return AppDialog.alert('O serviço ainda está bloqueado. O prêmio ficará disponível para resgatar após o cooldown.');
+    if (!(await AppDialog.confirm('Resgatar este prêmio gratuito? Nenhum valor será descontado do Saldo Dominadora.'))) return;
     if (award.kind === 'bonus') {
       AppStorage.setItem('rouletteBonusUntil', Date.now() + Economy.config.bonusDurationHours * 3600000);
       const checkbox = document.getElementById('bonusEspecialCheckbox');

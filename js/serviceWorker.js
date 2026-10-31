@@ -1,71 +1,108 @@
-/* Updates wait for an explicit user choice. No storage is cleared. */
+/* Detect updates automatically; activation always preserves data and waits for consent. */
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
   window.addEventListener('load', async () => {
     try {
       const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './', updateViaCache: 'none' });
-      let reloading = false;
+      const local = ['127.0.0.1', 'localhost'].includes(location.hostname) && location.port === '5501';
+      if (local) {
+        const accept = () => registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+        accept();
+        registration.addEventListener('updatefound', () => registration.installing?.addEventListener('statechange', accept));
+        await registration.update();
+        return;
+      }
       const banner = document.getElementById('updateBanner');
-      function offer() {
-        banner.hidden = false;
-        if (registration.waiting) {
-          const channel = new MessageChannel();
-          channel.port1.onmessage = (event) => (document.getElementById('updateVersion').textContent = 'Nova versão disponível: ' + event.data);
-          registration.waiting.postMessage({ type: 'VERSION' }, [channel.port2]);
+      const label = document.getElementById('updateVersion');
+      const progress = document.getElementById('updateProgress');
+      const now = document.getElementById('updateNow');
+      const later = document.getElementById('updateLater');
+      let applying = false,
+        offeredWorker = null,
+        ready = false;
+      const hadController = !!navigator.serviceWorker.controller;
+      async function activate() {
+        if (applying || !ready) return;
+        try {
+          applying = true;
+          banner.hidden = false;
+          now.disabled = true;
+          later.disabled = true;
+          progress.hidden = false;
+          progress.value = 10;
+          label.textContent = 'Salvando seus dados…';
+          if (typeof syncTimer === 'function') syncTimer();
+          if (typeof persistTimer === 'function') persistTimer();
+          AppStorage.flush();
+          progress.value = 50;
+          label.textContent = 'Ativando a versão já baixada…';
+          await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+          if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          else {
+            progress.value = 100;
+            location.reload();
+          }
+        } catch (error) {
+          applying = false;
+          now.disabled = false;
+          later.disabled = false;
+          label.textContent = 'Não foi possível atualizar. Seus dados foram mantidos.';
+          storageFailure(error);
         }
       }
-      if (registration.waiting) offer();
+      async function offer() {
+        if (!registration.waiting || applying) return;
+        ready = true;
+        banner.hidden = false;
+        progress.hidden = true;
+        label.textContent = 'Nova versão pronta para instalar.';
+        if (offeredWorker === registration.waiting) return;
+        offeredWorker = registration.waiting;
+        if (await AppDialog.confirm('Uma nova versão está pronta. Atualizar agora? Seus dados serão preservados.')) await activate();
+      }
+      later.onclick = () => {
+        banner.hidden = true;
+      };
+      now.onclick = activate;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (applying) {
+          progress.value = 100;
+          label.textContent = 'Atualização concluída. Reabrindo…';
+          location.reload();
+        } else if (hadController) {
+          ready = true;
+          banner.hidden = false;
+          label.textContent = 'Nova versão ativa. Atualize esta página para usar.';
+        }
+      });
       registration.addEventListener('updatefound', () => {
         const worker = registration.installing;
         worker?.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) offer();
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) void offer();
         });
       });
-      document.getElementById('updateLater').onclick = () => (banner.hidden = true);
-      document.getElementById('updateNow').onclick = () => {
-        try {
-          syncTimer();
-          persistTimer();
-          AppStorage.flush();
-          reloading = true;
-          if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-          else location.reload();
-        } catch (error) {
-          storageFailure(error);
-        }
-      };
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (reloading) location.reload();
-        else if (navigator.serviceWorker.controller && registration.active) {
-          // First install needs no reload. A changed controller in another tab is offered explicitly.
-          if (window.__hadController) offer();
-        }
-        window.__hadController = true;
-      });
-      window.__hadController = !!navigator.serviceWorker.controller;
-      let lastCheck = Date.now();
+      await offer();
+      let lastCheck = 0;
       async function check() {
         if (Date.now() - lastCheck < 60000) return;
         lastCheck = Date.now();
         try {
           await registration.update();
-        } catch {}
+          await offer();
+        } catch {
+          /* Retry automatically when online again. */
+        }
       }
       document.addEventListener('visibilitychange', () => {
-        if (!document.hidden) check();
+        if (!document.hidden) void check();
+      });
+      window.addEventListener('online', () => {
+        lastCheck = 0;
+        void check();
       });
       setInterval(check, 5 * 60 * 1000);
-      document.getElementById('checkUpdate').onclick = async () => {
-        try {
-          await registration.update();
-          document.getElementById('backupMessage').textContent = registration.waiting ? 'Atualização pronta para instalar.' : 'Verificação concluída. Nenhuma atualização pronta no momento.';
-          if (registration.waiting) offer();
-        } catch {
-          document.getElementById('backupMessage').textContent = 'Não foi possível verificar a atualização. Confira a conexão.';
-        }
-      };
+      void check();
     } catch (error) {
       console.warn('PWA indisponível:', error);
-      document.getElementById('backupMessage').textContent = 'PWA indisponível. O cadastro local continua disponível. ' + error.message;
     }
   });
 }

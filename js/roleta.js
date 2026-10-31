@@ -68,8 +68,8 @@
           : s.kind === 'none'
             ? 'Nada hoje'
             : s.kind === 'offer'
-              ? 'Oferta de benefício real: ' + service.label + ' · ' + getEconomy().prices[service.id] + ' créditos'
-              : (s.kind === 'reducer' ? 'Redutor gratuito: ' : 'Serviço gratuito: ') + service.label + ' · valor de catálogo ' + getEconomy().prices[service.id] + ' créditos';
+              ? 'Benefício do catálogo: ' + service.label + ' · ' + formatBR(getEconomy().prices[service.id])
+              : (s.kind === 'reducer' ? 'Redutor gratuito: ' : 'Serviço gratuito: ') + service.label + ' · valor de catálogo ' + formatBR(getEconomy().prices[service.id]);
     }
   }
   function settleSpin(spin) {

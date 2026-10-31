@@ -28,26 +28,49 @@ test('custom catalog validates limits and stores no past operations', () => {
   s.prices[E.config.services[0].id] = 22.5;
   s.discountPercent = 10;
   assert.equal(E.validate(s).prices[E.config.services[0].id], 22.5);
-  s.timer.maxRate = 0.01;
+  s.timer.autoEvery = 0.01;
   assert.throws(() => E.validate(s));
   assert.throws(() => E.defaults('bad'));
 });
-test('timer integrates rate changes without retroactive gains, caps rate/time', () => {
+test('timer integrates rate changes without retroactive gains, no rate or time caps', () => {
   const s = E.defaults('balanced');
   let t = E.step({ seconds: 0, earnedUnits: 0, rate: 0.5 }, 60, s, true);
   assert.equal(t.earnedUnits / 6000, 0.5);
-  assert.equal(t.rate, 0.55);
+  assert.equal(t.rate, 0.51);
   t = E.step(t, 60, s, true);
-  assert.equal(t.earnedUnits / 6000, 1.05);
+  assert.equal(t.earnedUnits / 6000, 1.01);
   t = E.step(t, 100000, s, true);
-  assert.equal(t.seconds, 7200);
-  assert.equal(t.rate, 3);
-  assert.ok(t.earnedUnits / 6000 <= 360);
-  assert.deepEqual(E.step(t, 60, s, true), t);
+  assert.equal(t.seconds, 100120);
+  assert.ok(t.rate > 3);
+  assert.ok(E.step(t, 60, s, true).seconds > t.seconds);
 });
 test('roulette catalog 19 sectors, all rewards reference canonical services', () => {
   assert.equal(E.config.roulette.length, 19);
   for (const s of E.config.roulette) if (s.serviceId) assert.ok(E.config.services.some((i) => i.id === s.serviceId));
   assert.equal(E.config.rouletteCooldownMs, 3 * 24 * 3600000);
   assert.equal(E.config.cooldowns[E.config.services[10].id], 336);
+});
+
+test('catalog reconciliation accepts new array entries and preserves existing custom prices', () => {
+  const previous = E.defaults('custom'),
+    baseline = E.defaults('custom');
+  previous.prices[E.config.services[0].id] = 31.25;
+  E.config.gains.push({ id: 'Atividade teste', classic: 50, balanced: 7 });
+  try {
+    const result = E.syncCatalog(previous, baseline);
+    assert.equal(result.gains['Atividade teste'], 7);
+    assert.equal(result.prices[E.config.services[0].id], 31.25);
+  } finally {
+    E.config.gains.pop();
+  }
+});
+
+test('dinner quote applies guest supplement before one discount and validates quantities', () => {
+  const settings = E.defaults();
+  const item = E.config.services.find((item) => item.id === 'Cozinhar jantar');
+  assert.deepEqual(E.serviceCost(settings, item, 2, true), { original: 130, extra: 20, discounted: true, final: 110.5 });
+  assert.equal(E.serviceCost(settings, item, 0, false).final, 110);
+  assert.throws(() => E.serviceCost(settings, item, -1));
+  assert.throws(() => E.serviceCost(settings, item, 1.5));
+  assert.throws(() => E.validate({ ...E.defaults('custom'), contractRules: { failurePenalty: -1, creamPenalty: 40, dinnerGuestPrice: 10 } }));
 });
