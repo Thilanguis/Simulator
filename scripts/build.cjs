@@ -25,8 +25,13 @@ for (const name of [...assets, 'service-worker.js']) {
 }
 const version = '2.0.0-' + digest.digest('hex').slice(0, 10);
 const workerTemplate = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
-if (!workerTemplate.includes('__BUILD_VERSION__') || !/\/\*__PRECACHE__\*\/\s*\[\]/.test(workerTemplate)) throw new Error('Missing service worker build markers.');
-const sw = workerTemplate.replace('__BUILD_VERSION__', version).replace(/\/\*__PRECACHE__\*\/\s*\[\]/, JSON.stringify(assets));
+// Accept both the original source template and a versioned worker published directly by GitHub Pages.
+const isTemplate = workerTemplate.includes('__BUILD_VERSION__') && /\/\*__PRECACHE__\*\/\s*\[\]/.test(workerTemplate);
+if (!isTemplate && !/const VERSION = '[^']+';/.test(workerTemplate)) throw new Error('Missing service worker version.');
+const sw = isTemplate
+  ? workerTemplate.replace('__BUILD_VERSION__', version).replace(/\/\*__PRECACHE__\*\/\s*\[\]/, JSON.stringify(assets))
+  : workerTemplate.replace(/const VERSION = '[^']+';/, "const VERSION = '" + version + "';")
+      .replace(/const ASSETS = \[[^;]+\];/, 'const ASSETS = ' + JSON.stringify(assets) + ';');
 fs.writeFileSync(path.join(dest, 'service-worker.js'), sw);
 fs.writeFileSync(path.join(dest, 'version.json'), JSON.stringify({ version }));
 console.log('Build completo: dist/ · ' + version + ' · ' + assets.length + ' arquivos locais.');

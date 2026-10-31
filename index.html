@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="css/bonusAtivoGPT.css" />
     <link rel="stylesheet" href="css/luzLateral.css" />
     <link rel="stylesheet" href="css/modern.css" />
-    <script type="module" src="firebaseConfiguration.js"></script>
+    
   </head>
   <body>
     <div class="container">
@@ -499,6 +499,14 @@
           <summary>Carteira compartilhada</summary>
           <p class="hint">Vocês acompanham a mesma carteira, sem tela de login. Um aparelho controla a sessão por vez.</p>
           <p id="cloudSettingsStatus" role="status">Este navegador ainda usa uma carteira local.</p>
+          <details class="firebase-setup">
+            <summary>Configurar conexão Firebase neste aparelho</summary>
+            <p class="hint">Informe a chave pública <code>apiKey</code> da configuração do aplicativo Web do projeto Firebase <strong>walletsumilator</strong>. A chave será guardada somente neste navegador. Não informe o código privado de vínculo aqui.</p>
+            <label for="firebaseWebApiKey">Firebase Web apiKey</label>
+            <input id="firebaseWebApiKey" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="AIza..." />
+            <button type="button" id="saveFirebaseWebApiKey">Salvar configuração Firebase</button>
+            <p id="firebaseKeyStatus" role="status" class="hint"></p>
+          </details>
           <div class="btn-row">
             <button type="button" id="createSharedWallet">Compartilhar esta carteira</button>
             <button type="button" id="showPairCode" hidden>Mostrar código de vínculo</button>

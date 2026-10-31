@@ -124,6 +124,25 @@ document.addEventListener('DOMContentLoaded', () => {
       connecting = false;
     }
   }
+  // Public Firebase Web API key is stored only on this browser.
+  const firebaseKeyStorage = 'findom.firebase.webApiKey.v1';
+  const firebaseKeyField = $('firebaseWebApiKey');
+  const firebaseKeyStatus = $('firebaseKeyStatus');
+  const storedFirebaseKey = (localStorage.getItem(firebaseKeyStorage) || '').trim();
+  firebaseKeyField.value = storedFirebaseKey;
+  firebaseKeyStatus.textContent = storedFirebaseKey ? 'Configuração salva neste aparelho.' : 'Conexão Firebase ainda não configurada neste aparelho.';
+  $('saveFirebaseWebApiKey').onclick = async () => {
+    const key = firebaseKeyField.value.trim();
+    if (!/^AIza[0-9A-Za-z_-]{30,}$/.test(key)) {
+      firebaseKeyStatus.textContent = 'Chave inválida. Copie apiKey da configuração Web do seu projeto Firebase.';
+      return;
+    }
+    const previous = localStorage.getItem(firebaseKeyStorage);
+    if (previous && previous !== key && !(await AppDialog.confirm('Trocar a configuração do Firebase neste aparelho? Faça backup antes de mudar o projeto.'))) return;
+    localStorage.setItem(firebaseKeyStorage, key);
+    firebaseKeyStatus.textContent = 'Configuração salva neste aparelho. Use Reconectar ou reabra o aplicativo.';
+    if (code && mode === 'error') void connect(code);
+  };
   $('createSharedWallet').onclick = async () => {
     if (!(await AppDialog.confirm('Enviar esta carteira ao seu Firebase? Saldo, histórico, tarefas, roleta, configurações e notas reais serão compartilhados. Uma cópia local será preservada.'))) return;
     await connect(WalletCipher.create(), true);

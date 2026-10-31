@@ -5,7 +5,7 @@ test('classic prices/gains preserved, balanced nonuniform and catalog complete',
   const a = E.defaults('classic'),
     b = E.defaults('balanced');
   assert.equal(Object.keys(a.prices).length, 17);
-  assert.equal(Object.keys(a.gains).length, 12);
+  assert.equal(Object.keys(a.gains).length, E.config.gains.length);
   E.config.services.forEach((s) => assert.equal(a.prices[s.id], s.classic));
   assert.ok(new Set(E.config.services.map((s) => s.balanced / s.classic)).size > 5);
   assert.deepEqual(
