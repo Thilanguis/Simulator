@@ -1,33 +1,31 @@
-name: Validate wallet
+name: Validate redirect
 on:
-  pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  tests:
+  redirect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npm run simulate
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: wallet-validation
-          path: |
-            docs/ECONOMIA.md
-            test-results/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: wallet-static-site
-          path: dist/
+      - name: Check canonical destination and storage preservation
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import assert from 'node:assert/strict';
+          const html = fs.readFileSync('index.html', 'utf8');
+          const worker = fs.readFileSync('service-worker.js', 'utf8');
+          const readme = fs.readFileSync('README.md', 'utf8');
+          assert.ok(html.includes('location.replace("https://thilanguis.github.io/Wallet-Simulator/"'));
+          assert.ok(html.includes('location.search+location.hash'));
+          assert.ok(html.includes('rel="canonical"'));
+          assert.ok(readme.includes('https://github.com/Thilanguis/Wallet-Simulator'));
+          assert.ok(!/localStorage\.(clear|removeItem)|indexedDB\.deleteDatabase|caches\.delete/.test(html + worker));
+          assert.ok(!worker.includes("addEventListener('fetch'"));
+          console.log('Canonical redirect validated; no storage cleanup or old app shell.');
+          JS
